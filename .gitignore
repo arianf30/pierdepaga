@@ -32,6 +32,13 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# AI / Cursor (local del workspace)
+.cursor/
+ai-manifest.json
+ai-plan-escalas.json
+ai-role.json
 
 # vercel
 .vercel
