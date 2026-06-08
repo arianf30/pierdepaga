@@ -13,7 +13,6 @@ export type Player = {
   avatar: string
   rank: number
   tier: string
-  level: number
   wins: number
   losses: number
   streak: number
@@ -29,7 +28,6 @@ export const me: Player = {
   avatar: '/player-1.png',
   rank: 7,
   tier: 'Diamante II',
-  level: 42,
   wins: 184,
   losses: 63,
   streak: 6,
@@ -46,7 +44,6 @@ export const topPlayers: Player[] = [
     avatar: '/player-2.png',
     rank: 1,
     tier: 'Leyenda Apex',
-    level: 88,
     wins: 412,
     losses: 71,
     streak: 14,
@@ -61,7 +58,6 @@ export const topPlayers: Player[] = [
     avatar: '/player-3.png',
     rank: 2,
     tier: 'Leyenda Apex',
-    level: 81,
     wins: 388,
     losses: 90,
     streak: 9,
@@ -76,7 +72,6 @@ export const topPlayers: Player[] = [
     avatar: '/player-1.png',
     rank: 3,
     tier: 'Diamante I',
-    level: 42,
     wins: 184,
     losses: 63,
     streak: 6,
@@ -95,7 +90,6 @@ export const leaderboard: Player[] = [
     avatar: '/player-2.png',
     rank: 4,
     tier: 'Diamante I',
-    level: 67,
     wins: 301,
     losses: 88,
     streak: 4,
@@ -110,7 +104,6 @@ export const leaderboard: Player[] = [
     avatar: '/player-3.png',
     rank: 5,
     tier: 'Diamante II',
-    level: 59,
     wins: 277,
     losses: 102,
     streak: 2,
@@ -125,7 +118,6 @@ export const leaderboard: Player[] = [
     avatar: '/player-2.png',
     rank: 6,
     tier: 'Platino I',
-    level: 51,
     wins: 240,
     losses: 95,
     streak: 1,
@@ -140,7 +132,6 @@ export const leaderboard: Player[] = [
     avatar: '/player-3.png',
     rank: 7,
     tier: 'Platino I',
-    level: 48,
     wins: 219,
     losses: 110,
     streak: 0,
@@ -155,7 +146,6 @@ export const leaderboard: Player[] = [
     avatar: '/player-2.png',
     rank: 8,
     tier: 'Platino II',
-    level: 44,
     wins: 198,
     losses: 121,
     streak: 3,

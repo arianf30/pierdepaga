@@ -45,17 +45,12 @@ export function ProfileView() {
           <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-transparent" />
         </div>
         <div className="relative flex flex-col items-center gap-5 p-6 text-center sm:flex-row sm:items-end sm:text-left sm:p-8">
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={player.avatar || '/placeholder.svg'}
-              alt={player.name}
-              className="size-28 rounded-2xl object-cover ring-2 ring-primary/60 ring-glow-energy sm:size-32"
-            />
-            <span className="type-badge absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-md bg-accent px-2.5 py-0.5 font-display font-bold text-accent-foreground">
-              Nv {player.level}
-            </span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={player.avatar || '/placeholder.svg'}
+            alt={player.name}
+            className="size-28 rounded-2xl object-cover ring-2 ring-primary/60 ring-glow-energy sm:size-32"
+          />
           <div className="flex-1 pb-1">
             <p className="type-tag inline-flex items-center gap-1.5 text-accent">
               <Crown className="size-4" /> {player.tier}

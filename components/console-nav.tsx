@@ -5,7 +5,6 @@ import {
   Home,
   Trophy,
   Medal,
-  User,
   Swords,
   Sparkles,
   Bell,
@@ -14,6 +13,7 @@ import {
 import type { View } from '@/lib/data'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/components/auth/user-provider'
+import { getInitials } from '@/lib/auth/user'
 import {
   BackdropBlur,
   MobilePortal,
@@ -27,7 +27,6 @@ const items: { id: View; label: string; icon: typeof Home }[] = [
   { id: 'ranking', label: 'Ranking', icon: Trophy },
   { id: 'prizes', label: 'Premios', icon: Medal },
   { id: 'challenges', label: 'Desafíos', icon: Swords },
-  { id: 'profile', label: 'Perfil', icon: User },
   { id: 'soon', label: 'Expansiones', icon: Sparkles },
 ]
 
@@ -125,7 +124,15 @@ export function ConsoleNav({
   )
 }
 
-function TopBarContent({ onBell }: { onBell?: () => void }) {
+function TopBarContent({
+  onBell,
+  onProfile,
+  isProfile,
+}: {
+  onBell?: () => void
+  onProfile?: () => void
+  isProfile?: boolean
+}) {
   const { player } = useUser()
 
   return (
@@ -141,24 +148,46 @@ function TopBarContent({ onBell }: { onBell?: () => void }) {
           <Bell className="size-4" />
           <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-destructive ring-2 ring-background" />
         </button>
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/60 py-1 pl-1 pr-3">
+        <button
+          type="button"
+          onClick={onProfile}
+          className={cn(
+            'flex items-center gap-2 rounded-lg border py-1 pl-1 pr-3 transition-colors',
+            isProfile
+              ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/25'
+              : 'border-border bg-secondary/60 hover:border-primary/30 hover:bg-secondary/80',
+          )}
+          aria-label="Ir al perfil"
+          aria-current={isProfile ? 'page' : undefined}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={player.avatar}
-            alt="Tu avatar"
+            alt=""
             className="size-7 rounded-md object-cover"
           />
+          <span className="font-display text-xs font-bold uppercase tracking-wide text-foreground sm:hidden">
+            {getInitials(player.name)}
+          </span>
           <div className="hidden leading-tight sm:block">
             <p className="text-xs font-semibold">{player.name}</p>
             <p className="type-tag text-[10px]">{player.tier}</p>
           </div>
-        </div>
+        </button>
       </div>
     </div>
   )
 }
 
-export function TopBar({ onBell }: { onBell?: () => void }) {
+export function TopBar({
+  onBell,
+  onProfile,
+  isProfile,
+}: {
+  onBell?: () => void
+  onProfile?: () => void
+  isProfile?: boolean
+}) {
   const isLg = useIsLg()
   const usePortal = isLg === false
 
@@ -172,7 +201,11 @@ export function TopBar({ onBell }: { onBell?: () => void }) {
       )}
     >
       <BackdropBlur edge="top" />
-      <TopBarContent onBell={onBell} />
+      <TopBarContent
+        onBell={onBell}
+        onProfile={onProfile}
+        isProfile={isProfile}
+      />
     </header>
   )
 

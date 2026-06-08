@@ -22,10 +22,14 @@ export default function Page() {
         <Atmosphere />
 
         <ConsoleNav view={view} setView={setView} />
-        <TopBar onBell={() => setView('home')} />
+        <TopBar
+          onBell={() => setView('home')}
+          onProfile={() => setView('profile')}
+          isProfile={view === 'profile'}
+        />
 
         <div className="relative lg:pl-20">
-          <main className="mx-auto w-full max-w-7xl px-4 pb-28 pt-[4.25rem] sm:px-6 lg:px-10 lg:pb-10 lg:pt-6">
+          <main className="mx-auto w-full max-w-7xl px-4 pb-28 pt-[5.5rem] sm:px-6 lg:px-10 lg:pb-10 lg:pt-6">
             <AnimatePresence mode="wait">
               <motion.div
                 key={view}

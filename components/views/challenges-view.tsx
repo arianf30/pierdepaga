@@ -95,17 +95,12 @@ export function ChallengesView() {
             </div>
 
             <div className="mt-4 flex items-center gap-4">
-              <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={p.avatar || '/placeholder.svg'}
-                  alt={p.name}
-                  className="size-20 rounded-2xl object-cover ring-1 ring-border transition-all group-hover:ring-2 group-hover:ring-primary/60"
-                />
-                <span className="type-badge absolute -bottom-2 left-1/2 -translate-x-1/2 rounded bg-card px-1.5 py-0.5 font-display font-bold text-accent">
-                  Nv {p.level}
-                </span>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={p.avatar || '/placeholder.svg'}
+                alt={p.name}
+                className="size-20 rounded-2xl object-cover ring-1 ring-border transition-all group-hover:ring-2 group-hover:ring-primary/60"
+              />
               <div>
                 <p className="font-display text-lg font-bold leading-tight">
                   {p.name}

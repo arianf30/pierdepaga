@@ -87,17 +87,12 @@ export function HomeView({ setView }: { setView: (v: View) => void }) {
             className="w-full max-w-sm rounded-2xl border border-border glass p-5 lg:w-80"
           >
             <div className="flex items-center gap-4">
-              <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={player.avatar || '/placeholder.svg'}
-                  alt={player.name}
-                  className="size-16 rounded-xl object-cover ring-2 ring-primary/50"
-                />
-                <span className="type-badge absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-md bg-accent px-2 py-0.5 font-display font-bold text-accent-foreground">
-                  Nv {player.level}
-                </span>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={player.avatar || '/placeholder.svg'}
+                alt={player.name}
+                className="size-16 rounded-xl object-cover ring-2 ring-primary/50"
+              />
               <div>
                 <p className="font-display text-lg font-semibold">{player.name}</p>
                 <p className="text-xs text-muted-foreground">{player.handle}</p>

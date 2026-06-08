@@ -32,7 +32,7 @@ export function PrizesView() {
             value: achievements.length - unlocked,
             tone: 'text-muted-foreground',
           },
-          { label: 'Nivel', value: player.level, tone: 'text-accent' },
+          { label: 'Racha', value: player.streak, tone: 'text-accent' },
         ].map((s, i) => (
           <motion.div
             key={s.label}
