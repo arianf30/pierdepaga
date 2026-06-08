@@ -1,7 +1,7 @@
 import type React from 'react'
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
-import { Archivo, Inter } from 'next/font/google'
+import { Archivo, Barlow, Inter } from 'next/font/google'
 import './globals.css'
 
 const inter = Inter({
@@ -10,11 +10,19 @@ const inter = Inter({
   weight: ['400', '500', '600', '700'],
 })
 
-/** Títulos y logo */
+/** Títulos */
 const archivo = Archivo({
   variable: '--font-archivo',
   subsets: ['latin'],
   weight: ['500', '600', '700'],
+})
+
+/** Logo Velocity (Formula) */
+const barlow = Barlow({
+  variable: '--font-logo',
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  style: ['italic', 'normal'],
 })
 
 export const metadata: Metadata = {
@@ -35,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="es-AR"
-      className={`dark ${inter.variable} ${archivo.variable} bg-background`}
+      className={`dark ${inter.variable} ${archivo.variable} ${barlow.variable} bg-background`}
     >
       <body className="font-sans antialiased">
         {children}

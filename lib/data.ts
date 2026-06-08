@@ -1,4 +1,10 @@
-export type View = 'home' | 'ranking' | 'profile' | 'challenges' | 'soon'
+export type View =
+  | 'home'
+  | 'ranking'
+  | 'prizes'
+  | 'challenges'
+  | 'profile'
+  | 'soon'
 
 export type Player = {
   id: string

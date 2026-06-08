@@ -1,7 +1,16 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Home, Trophy, User, Swords, Sparkles, Bell, LogOut } from 'lucide-react'
+import {
+  Home,
+  Trophy,
+  Medal,
+  User,
+  Swords,
+  Sparkles,
+  Bell,
+  LogOut,
+} from 'lucide-react'
 import type { View } from '@/lib/data'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/components/auth/user-provider'
@@ -10,10 +19,13 @@ import {
   MobilePortal,
   useIsLg,
 } from '@/components/bar-backdrop'
+import { BrandLogo } from '@/components/brand-logo'
+import { RegionSelectors } from '@/components/region-selectors'
 
 const items: { id: View; label: string; icon: typeof Home }[] = [
   { id: 'home', label: 'Arena', icon: Home },
   { id: 'ranking', label: 'Ranking', icon: Trophy },
+  { id: 'prizes', label: 'Premios', icon: Medal },
   { id: 'challenges', label: 'Desafíos', icon: Swords },
   { id: 'profile', label: 'Perfil', icon: User },
   { id: 'soon', label: 'Expansiones', icon: Sparkles },
@@ -34,10 +46,10 @@ export function ConsoleNav({
       <nav className="fixed left-0 top-0 z-40 hidden h-screen w-20 flex-col items-center justify-between border-r border-border glass py-6 lg:flex">
         <button
           onClick={() => setView('home')}
-          className="grid size-11 place-items-center rounded-xl bg-primary font-display text-lg font-semibold text-primary-foreground ring-glow-energy"
+          className="grid size-14 place-items-center transition-transform hover:scale-105"
           aria-label="Inicio PierdePaga"
         >
-          P
+          <BrandLogo size="xl" variant="compact" />
         </button>
 
         <div className="flex flex-col items-center gap-2">
@@ -118,16 +130,9 @@ function TopBarContent({ onBell }: { onBell?: () => void }) {
 
   return (
     <div className="relative z-1 flex items-center justify-between gap-4 px-4 py-3 lg:px-8">
-      <div className="flex items-center gap-3">
-        <span className="font-display text-sm font-semibold text-foreground lg:text-base">
-          Pierde<span className="text-primary">Paga</span>
-        </span>
-        <span className="type-badge hidden rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-accent sm:inline">
-          Temporada 4 · En vivo
-        </span>
-      </div>
+      <RegionSelectors />
 
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <button
           onClick={onBell}
           className="relative grid size-9 place-items-center rounded-lg border border-border bg-secondary/60 text-muted-foreground transition-colors hover:text-foreground"

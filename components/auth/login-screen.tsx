@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Flame } from 'lucide-react'
 import { Atmosphere } from '@/components/atmosphere'
 import { PrimaryButton, fadeUp } from '@/components/ui-kit'
+import { BrandLogo } from '@/components/brand-logo'
 import { createClient } from '@/lib/supabase/client'
 
 function GoogleIcon() {
@@ -68,6 +69,7 @@ export function LoginScreen({ errorMessage }: { errorMessage?: string | null }) 
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center gap-10 px-5 py-12 lg:flex-row lg:gap-16">
         <motion.div {...fadeUp(0)} className="max-w-md text-center lg:text-left">
+          <BrandLogo size="lg" className="mb-6" />
           <span className="type-badge mb-4 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-primary">
             <Flame className="size-3.5" /> El que pierde, paga
           </span>
@@ -87,13 +89,7 @@ export function LoginScreen({ errorMessage }: { errorMessage?: string | null }) 
           className="w-full max-w-md rounded-3xl border border-border glass p-8 sm:p-10"
         >
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary/15 font-display text-2xl font-bold text-primary ring-glow-energy">
-              P
-            </div>
-            <h2 className="text-2xl font-semibold text-foreground">
-              Pierde<span className="text-primary">Paga</span>
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Iniciá sesión para continuar
             </p>
           </div>

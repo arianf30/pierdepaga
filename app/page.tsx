@@ -9,6 +9,7 @@ import { HomeView } from '@/components/views/home-view'
 import { RankingView } from '@/components/views/ranking-view'
 import { ProfileView } from '@/components/views/profile-view'
 import { ChallengesView } from '@/components/views/challenges-view'
+import { PrizesView } from '@/components/views/prizes-view'
 import { ComingSoonView } from '@/components/views/coming-soon-view'
 import { UserProvider } from '@/components/auth/user-provider'
 
@@ -35,8 +36,9 @@ export default function Page() {
               >
                 {view === 'home' && <HomeView setView={setView} />}
                 {view === 'ranking' && <RankingView setView={setView} />}
-                {view === 'profile' && <ProfileView />}
+                {view === 'prizes' && <PrizesView />}
                 {view === 'challenges' && <ChallengesView />}
+                {view === 'profile' && <ProfileView />}
                 {view === 'soon' && <ComingSoonView />}
               </motion.div>
             </AnimatePresence>
