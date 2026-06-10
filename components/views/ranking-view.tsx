@@ -163,32 +163,38 @@ function SortableHeader({
   const isActive = sort.column === column
 
   return (
-    <button
-      type="button"
-      onClick={() => onSort(column)}
+    <div
       className={cn(
-        'type-label inline-flex items-center gap-0.5 rounded-md px-1.5 py-1 transition-colors hover:text-foreground',
-        align === 'center' && 'w-full justify-center',
-        align === 'right' && 'ml-auto w-full justify-end',
-        isActive && 'bg-primary/10 text-foreground',
+        'flex items-center',
+        align === 'center' && 'justify-center',
+        align === 'right' && 'justify-end',
         className,
       )}
-      aria-sort={
-        isActive
-          ? sort.direction === 'asc'
-            ? 'ascending'
-            : 'descending'
-          : 'none'
-      }
     >
-      <span>{label}</span>
-      {isActive &&
-        (sort.direction === 'asc' ? (
-          <ChevronUp className="size-3 shrink-0 text-primary" />
-        ) : (
-          <ChevronDown className="size-3 shrink-0 text-primary" />
-        ))}
-    </button>
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className={cn(
+          'type-label inline-flex h-7 items-center gap-0.5 rounded-md px-2 leading-none transition-colors hover:text-foreground',
+          isActive && 'bg-primary/10 text-foreground',
+        )}
+        aria-sort={
+          isActive
+            ? sort.direction === 'asc'
+              ? 'ascending'
+              : 'descending'
+            : 'none'
+        }
+      >
+        <span className="leading-none">{label}</span>
+        {isActive &&
+          (sort.direction === 'asc' ? (
+            <ChevronUp className="size-3 shrink-0 text-primary" />
+          ) : (
+            <ChevronDown className="size-3 shrink-0 text-primary" />
+          ))}
+      </button>
+    </div>
   )
 }
 
@@ -239,10 +245,12 @@ function RankingRow({
   player,
   isMe,
   rowIndex,
+  onViewPlayer,
 }: {
   player: Player
   isMe: boolean
   rowIndex: number
+  onViewPlayer: (playerId: string) => void
 }) {
   const total = matchesPlayed(player)
   const isEven = rowIndex % 2 === 0
@@ -250,8 +258,17 @@ function RankingRow({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onViewPlayer(player.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onViewPlayer(player.id)
+        }
+      }}
       className={cn(
-        'group relative items-center gap-x-2 border-b border-border/40 px-3 transition-[background,box-shadow] duration-200 sm:gap-x-3 sm:px-5',
+        'group relative cursor-pointer items-center gap-x-2 border-b border-border/40 px-3 transition-[background,box-shadow] duration-200 hover:brightness-110 sm:gap-x-3 sm:px-5',
         TABLE_GRID,
         surface,
         isMe && 'ring-1 ring-inset ring-primary/15',
@@ -312,7 +329,13 @@ function RankingRow({
   )
 }
 
-export function RankingView({ setView }: { setView: (v: View) => void }) {
+export function RankingView({
+  setView,
+  onViewPlayer,
+}: {
+  setView: (v: View) => void
+  onViewPlayer: (playerId: string) => void
+}) {
   const { player } = useUser()
   const { rankingTitle } = useRegion()
   const [page, setPage] = useState(0)
@@ -407,9 +430,9 @@ export function RankingView({ setView }: { setView: (v: View) => void }) {
                   column="rank"
                   sort={sort}
                   onSort={handleSort}
-                  className="hidden sm:inline-flex"
+                  className="hidden sm:flex"
                 />
-                <span className="type-label hidden min-w-0 sm:block">
+                <span className="type-label hidden min-w-0 leading-none sm:flex sm:items-center">
                   Jugador
                 </span>
                 <SortableHeader
@@ -461,6 +484,7 @@ export function RankingView({ setView }: { setView: (v: View) => void }) {
                       player={p}
                       isMe={isMe}
                       rowIndex={i}
+                      onViewPlayer={onViewPlayer}
                     />
                   )
                 })

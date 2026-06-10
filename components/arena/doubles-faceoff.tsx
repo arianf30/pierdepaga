@@ -3,23 +3,29 @@ import { cn } from '@/lib/utils'
 import type { MatchType, Player } from '@/lib/data'
 import { teamLabel } from '@/lib/data'
 
+function playerShortName(name: string) {
+  return name.split(' ')[0] ?? name
+}
+
 function TeamStack({
   players,
   won,
   compact,
   align = 'start',
+  names = 'inline',
 }: {
   players: [Player, Player]
   won?: boolean
   compact?: boolean
   align?: 'start' | 'end'
+  names?: 'inline' | 'stacked'
 }) {
   const isEnd = align === 'end'
 
   return (
     <div
       className={cn(
-        'min-w-0 max-w-[42%] sm:max-w-none',
+        'min-w-0 flex-1',
         won ? 'text-primary' : 'text-foreground',
         isEnd && 'text-right',
       )}
@@ -38,21 +44,63 @@ function TeamStack({
             alt=""
             className={cn(
               'rounded-lg object-cover ring-2 ring-card',
-              compact ? 'size-8 sm:size-7' : 'size-9 sm:size-8',
+              compact ? 'size-9 sm:size-8' : 'size-10 sm:size-9',
               i === 1 && (isEnd ? '-mr-2.5' : '-ml-2.5'),
+              won && 'ring-primary/35',
             )}
           />
         ))}
       </div>
-      <p
-        className={cn(
-          'mt-1.5 line-clamp-2 font-medium leading-tight',
-          compact ? 'text-[11px] sm:text-[10px]' : 'text-xs',
-          won && 'font-semibold',
-        )}
-      >
-        {teamLabel(players)}
-      </p>
+
+      {names === 'stacked' ? (
+        <div
+          className={cn(
+            'mt-2 space-y-0.5',
+            isEnd && 'flex flex-col items-end',
+          )}
+        >
+          {players.map((p) => (
+            <p
+              key={p.id}
+              className={cn(
+                'text-xs font-semibold leading-tight',
+                won && 'text-glow-energy',
+              )}
+            >
+              {playerShortName(p.name)}
+            </p>
+          ))}
+        </div>
+      ) : (
+        <p
+          className={cn(
+            'mt-1.5 font-medium leading-tight',
+            compact ? 'text-xs' : 'text-sm',
+            won && 'font-semibold',
+          )}
+        >
+          {teamLabel(players)}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function VsDivider({ variant = 'default' }: { variant?: 'default' | 'arena' }) {
+  if (variant === 'arena') {
+    return (
+      <div className="flex shrink-0 flex-col items-center gap-1 px-1">
+        <span className="font-display text-[10px] font-black tracking-[0.2em] text-muted-foreground/45">
+          VS
+        </span>
+        <div className="h-10 w-px bg-gradient-to-b from-transparent via-primary/25 to-transparent" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="shrink-0 px-1 text-center">
+      <span className="text-[10px] font-bold text-muted-foreground">vs</span>
     </div>
   )
 }
@@ -72,14 +120,14 @@ function MatchMeta({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 border-t border-border px-3 py-2 sm:px-4',
+        'flex items-center gap-2 border-t border-border/50 px-4 py-2.5',
         className,
       )}
     >
       {type && (
         <span
           className={cn(
-            'type-badge rounded px-1.5 py-0.5 text-[9px]',
+            'type-badge rounded-md px-2 py-0.5 text-[9px]',
             isPierdePaga
               ? 'bg-accent/15 text-accent'
               : 'bg-primary/10 text-primary',
@@ -113,50 +161,45 @@ export function DoublesFaceoff({
   type?: string
   stake?: string
   highlight?: boolean
-  layout?: 'row' | 'stacked'
 }) {
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-2xl border bg-card/50',
-        highlight ? 'border-accent/35 bg-accent/5' : 'border-border',
+        'overflow-hidden rounded-2xl border bg-card/50 transition-colors',
+        highlight
+          ? 'border-accent/35 bg-accent/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+          : 'border-border hover:border-border/80 hover:bg-card/60',
       )}
     >
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 px-3 py-3.5 sm:gap-3 sm:px-4">
-        <div className="justify-self-start">
-          <TeamStack
-            players={teamA}
-            won={winnerTeam === 'A'}
-            compact
-            align="start"
-          />
-        </div>
+      <div className="flex items-center gap-2 px-3 py-3.5 sm:gap-4 sm:px-4">
+        <TeamStack
+          players={teamA}
+          won={winnerTeam === 'A'}
+          compact
+          align="start"
+          names="stacked"
+        />
 
-        <div className="shrink-0 px-1 text-center">
+        <div className="shrink-0 text-center">
           {score ? (
-            <p className="font-display text-xs font-bold tabular-nums sm:text-sm">
-              {score}
-            </p>
+            <p className="font-display text-sm font-bold tabular-nums">{score}</p>
           ) : (
-            <span className="text-[10px] font-bold text-muted-foreground">
-              vs
-            </span>
+            <VsDivider />
           )}
           {time && (
-            <p className="mt-0.5 whitespace-nowrap text-[9px] text-muted-foreground sm:text-[10px]">
+            <p className="mt-1 whitespace-nowrap text-[10px] text-muted-foreground">
               {time}
             </p>
           )}
         </div>
 
-        <div className="justify-self-end">
-          <TeamStack
-            players={teamB}
-            won={winnerTeam === 'B'}
-            compact
-            align="end"
-          />
-        </div>
+        <TeamStack
+          players={teamB}
+          won={winnerTeam === 'B'}
+          compact
+          align="end"
+          names="stacked"
+        />
       </div>
 
       <MatchMeta type={type} stake={stake} />
@@ -184,52 +227,62 @@ export function UpcomingDoublesCard({
   return (
     <article
       className={cn(
-        'flex h-full min-h-[11.5rem] flex-col rounded-2xl border bg-card/70 p-4',
-        isPierdePaga ? 'border-accent/30' : 'border-border',
+        'group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors',
+        isPierdePaga
+          ? 'border-accent/25 hover:border-accent/40'
+          : 'border-border hover:border-primary/20',
       )}
     >
-      <div className="grid grid-cols-[1fr_auto] items-start gap-x-3 gap-y-1">
-        <p className="col-start-1 flex items-center gap-1.5 font-display text-sm font-bold leading-tight">
-          <Clock className="size-3.5 shrink-0 text-primary" />
-          {scheduledAt}
-        </p>
-        <p className="col-start-2 row-span-2 self-start pt-0.5 text-right">
-          {stake ? (
-            <span className="font-display text-sm font-black tabular-nums text-accent">
-              {stake}
-            </span>
-          ) : (
-            <span className="inline-block w-14" aria-hidden />
-          )}
-        </p>
-        <p className="col-start-1 flex items-center gap-1 text-xs leading-tight text-muted-foreground">
-          <MapPin className="size-3 shrink-0" />
-          <span className="truncate">{club}</span>
-        </p>
-      </div>
+      {isPierdePaga && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/45 to-transparent" />
+      )}
 
-      <div className="mt-auto grid grid-cols-[1fr_auto_1fr] items-end gap-1 border-t border-border pt-4">
-        <div className="justify-self-start">
-          <TeamStack players={teamA} compact align="start" />
+      <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 font-display text-sm font-bold leading-tight">
+            <Clock className="size-3.5 shrink-0 text-primary" />
+            {scheduledAt}
+          </p>
+          <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
+            <MapPin className="size-3 shrink-0" />
+            <span className="truncate">{club}</span>
+          </p>
         </div>
-        <span className="mb-5 text-[10px] font-bold text-muted-foreground">
-          vs
-        </span>
-        <div className="justify-self-end">
-          <TeamStack players={teamB} compact align="end" />
-        </div>
-      </div>
-
-      <span
-        className={cn(
-          'type-badge mt-3 w-fit rounded px-1.5 py-0.5 text-[9px]',
-          isPierdePaga
-            ? 'bg-accent/15 text-accent'
-            : 'bg-primary/10 text-primary',
+        {stake && (
+          <span className="shrink-0 font-display text-sm font-black tabular-nums text-accent text-glow-gold">
+            {stake}
+          </span>
         )}
-      >
-        {isPierdePaga ? 'Pierde paga' : 'Simple'}
-      </span>
+      </div>
+
+      <div className="flex flex-1 items-center gap-2 border-t border-border/50 px-4 py-4">
+        <TeamStack
+          players={teamA}
+          compact
+          align="start"
+          names="stacked"
+        />
+        <VsDivider variant="arena" />
+        <TeamStack
+          players={teamB}
+          compact
+          align="end"
+          names="stacked"
+        />
+      </div>
+
+      <div className="border-t border-border/40 px-4 py-2.5">
+        <span
+          className={cn(
+            'type-badge rounded-md px-2 py-0.5 text-[9px]',
+            isPierdePaga
+              ? 'bg-accent/15 text-accent'
+              : 'bg-primary/10 text-primary',
+          )}
+        >
+          {isPierdePaga ? 'Pierde paga' : 'Simple'}
+        </span>
+      </div>
     </article>
   )
 }

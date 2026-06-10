@@ -6,6 +6,7 @@ export type View =
   | 'prizes'
   | 'challenges'
   | 'profile'
+  | 'player-profile'
   | 'notifications'
   | 'soon'
 
@@ -783,3 +784,152 @@ export const matchHistory: MatchRecord[] = [
 ]
 
 export const PROFILE_MATCH_PREVIEW = 4
+
+export type PublicPlayerProfile = {
+  player: Player
+  profile: {
+    firstName: string
+    lastName: string
+    instagram?: string
+    avatar: string
+    setsWon: number
+    setsLost: number
+    gamesWon: number
+    gamesLost: number
+  }
+  matchHistory: MatchRecord[]
+  prizes: WonPrize[]
+  regionLabel: string
+}
+
+function splitPlayerName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return { firstName: 'Jugador', lastName: '' }
+  if (parts.length === 1) return { firstName: parts[0], lastName: '' }
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') }
+}
+
+function deriveProfileStats(player: Player) {
+  return {
+    setsWon: Math.round(player.wins * 2.2),
+    setsLost: Math.round(player.losses * 2.1),
+    gamesWon: Math.round(player.wins * 14.2),
+    gamesLost: Math.round(player.losses * 13.8),
+  }
+}
+
+const MOCK_INSTAGRAM: Record<string, string> = {
+  p2: '@sofireyes',
+  p3: '@dmarin',
+  p4: '@luciaf',
+  p5: '@taguilar',
+  p9: '@valrios',
+  p10: '@nicop',
+}
+
+function buildMockMatchHistory(player: Player): MatchRecord[] {
+  const opponents = leaderboard
+    .filter((p) => p.id !== player.id)
+    .sort((a, b) => a.rank - b.rank)
+
+  const dates = ['Hoy', 'Ayer', 'hace 2 d', 'hace 4 d', 'hace 6 d', 'hace 8 d']
+  const types: MatchType[] = ['Partido simple', 'Desafío pierde paga']
+  const scores = ['6-4 7-5', '3-6 4-6', '6-2 6-3', '7-6 6-4', '5-7 6-7', '6-3 6-1']
+
+  return opponents.slice(0, 6).map((opp, i) => ({
+    id: `${player.id}-m${i}`,
+    opponent: opp.name,
+    avatar: opp.avatar,
+    type: types[i % types.length],
+    result: i % 3 === 1 ? 'P' : 'G',
+    score: scores[i % scores.length],
+    date: dates[i % dates.length],
+  }))
+}
+
+function buildMockPrizes(player: Player): WonPrize[] {
+  const prizes: WonPrize[] = []
+
+  if (player.streak >= POSITIVE_STREAK_MILESTONES[0]) {
+    prizes.push({
+      id: `${player.id}-wp1`,
+      name: 'Cubregrip PierdePaga',
+      detail: `Racha de +${POSITIVE_STREAK_MILESTONES[0]} victorias`,
+      sponsor: 'Paddle Pro',
+      date: 'Mar 2026',
+      type: 'racha',
+    })
+  }
+
+  if (player.streak >= POSITIVE_STREAK_MILESTONES[1]) {
+    prizes.push({
+      id: `${player.id}-wp2`,
+      name: 'Remera edición limitada',
+      detail: `Racha de +${POSITIVE_STREAK_MILESTONES[1]} victorias`,
+      sponsor: 'SportZone',
+      date: 'Feb 2026',
+      type: 'racha',
+    })
+  }
+
+  if (player.rank <= 3) {
+    prizes.push({
+      id: `${player.id}-wp3`,
+      name: 'Top 3 regional',
+      detail: `Podio del ranking · puesto #${player.rank}`,
+      date: 'Jun 2026',
+      type: 'ranking',
+    })
+  }
+
+  return prizes
+}
+
+export function getPlayerById(playerId: string): Player | undefined {
+  if (playerId === 'me') return me
+  return leaderboard.find((p) => p.id === playerId)
+}
+
+export function getPublicPlayerProfile(
+  playerId: string,
+): PublicPlayerProfile | null {
+  const player = getPlayerById(playerId)
+  if (!player) return null
+
+  if (playerId === 'me') {
+    const { firstName, lastName } = splitPlayerName(player.name)
+    return {
+      player,
+      profile: {
+        firstName: defaultProfile.firstName || firstName,
+        lastName: defaultProfile.lastName || lastName,
+        instagram: defaultProfile.instagram || undefined,
+        avatar: defaultProfile.avatar || player.avatar,
+        setsWon: defaultProfile.setsWon,
+        setsLost: defaultProfile.setsLost,
+        gamesWon: defaultProfile.gamesWon,
+        gamesLost: defaultProfile.gamesLost,
+      },
+      matchHistory,
+      prizes: wonPrizes,
+      regionLabel: player.region,
+    }
+  }
+
+  const { firstName, lastName } = splitPlayerName(player.name)
+  const stats = deriveProfileStats(player)
+
+  return {
+    player,
+    profile: {
+      firstName,
+      lastName,
+      instagram: MOCK_INSTAGRAM[player.id],
+      avatar: player.avatar,
+      ...stats,
+    },
+    matchHistory: buildMockMatchHistory(player),
+    prizes: buildMockPrizes(player),
+    regionLabel: player.region,
+  }
+}

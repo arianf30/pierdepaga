@@ -177,10 +177,9 @@ function TopBarContent({
           <span className="font-display text-xs font-bold uppercase tracking-wide text-foreground sm:hidden">
             {getInitials(player.name)}
           </span>
-          <div className="hidden leading-tight sm:block">
-            <p className="text-xs font-semibold">{player.name}</p>
-            <p className="type-tag text-[10px]">{player.tier}</p>
-          </div>
+          <span className="hidden text-xs font-semibold sm:inline">
+            {player.name}
+          </span>
         </button>
       </div>
     </div>

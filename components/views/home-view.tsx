@@ -115,13 +115,9 @@ export function HomeView({ setView }: { setView: (v: View) => void }) {
       {scheduledMatches.length > 0 && (
         <motion.section {...fadeUp(1)}>
           <SectionTitle title="Próximos" />
-          <div className="-mx-4 flex items-stretch gap-3 overflow-x-auto px-4 pb-1 snap-x snap-mandatory sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {scheduledMatches.map((m, i) => (
-              <motion.div
-                key={m.id}
-                {...fadeUp(i + 1)}
-                className="w-[min(85vw,280px)] shrink-0 snap-start sm:w-auto"
-              >
+              <motion.div key={m.id} {...fadeUp(i + 1)}>
                 <UpcomingDoublesCard
                   teamA={m.teamA}
                   teamB={m.teamB}
@@ -149,7 +145,7 @@ export function HomeView({ setView }: { setView: (v: View) => void }) {
             </button>
           }
         />
-        <div className="space-y-2">
+        <div className="space-y-3">
           {recentFeed.map((m, i) => (
             <motion.div key={m.id} {...fadeUp(i + 1)}>
               <DoublesFaceoff
