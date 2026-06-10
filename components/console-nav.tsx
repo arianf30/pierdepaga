@@ -128,10 +128,12 @@ function TopBarContent({
   onBell,
   onProfile,
   isProfile,
+  isNotifications,
 }: {
   onBell?: () => void
   onProfile?: () => void
   isProfile?: boolean
+  isNotifications?: boolean
 }) {
   const { player } = useUser()
 
@@ -142,8 +144,14 @@ function TopBarContent({
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <button
           onClick={onBell}
-          className="relative grid size-9 place-items-center rounded-lg border border-border bg-secondary/60 text-muted-foreground transition-colors hover:text-foreground"
+          className={cn(
+            'relative grid size-9 place-items-center rounded-lg border transition-colors',
+            isNotifications
+              ? 'border-primary/40 bg-primary/10 text-primary ring-1 ring-primary/25'
+              : 'border-border bg-secondary/60 text-muted-foreground hover:text-foreground',
+          )}
           aria-label="Notificaciones"
+          aria-current={isNotifications ? 'page' : undefined}
         >
           <Bell className="size-4" />
           <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-destructive ring-2 ring-background" />
@@ -183,10 +191,12 @@ export function TopBar({
   onBell,
   onProfile,
   isProfile,
+  isNotifications,
 }: {
   onBell?: () => void
   onProfile?: () => void
   isProfile?: boolean
+  isNotifications?: boolean
 }) {
   const isLg = useIsLg()
   const usePortal = isLg === false
@@ -205,6 +215,7 @@ export function TopBar({
         onBell={onBell}
         onProfile={onProfile}
         isProfile={isProfile}
+        isNotifications={isNotifications}
       />
     </header>
   )

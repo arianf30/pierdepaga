@@ -35,6 +35,7 @@ export async function updateSession(request: NextRequest) {
     pathname === '/login' ||
     pathname === '/tipografias' ||
     pathname === '/logos' ||
+    pathname === '/archivo' ||
     pathname.startsWith('/_next')
 
   if (!user && !isPublic) {

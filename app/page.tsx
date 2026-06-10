@@ -11,21 +11,25 @@ import { ProfileView } from '@/components/views/profile-view'
 import { ChallengesView } from '@/components/views/challenges-view'
 import { PrizesView } from '@/components/views/prizes-view'
 import { ComingSoonView } from '@/components/views/coming-soon-view'
+import { NotificationsView } from '@/components/views/notifications-view'
 import { UserProvider } from '@/components/auth/user-provider'
+import { RegionProvider } from '@/components/region-provider'
 
 export default function Page() {
   const [view, setView] = useState<View>('home')
 
   return (
+    <RegionProvider>
     <UserProvider>
       <div className="relative min-h-screen">
         <Atmosphere />
 
         <ConsoleNav view={view} setView={setView} />
         <TopBar
-          onBell={() => setView('home')}
+          onBell={() => setView('notifications')}
           onProfile={() => setView('profile')}
           isProfile={view === 'profile'}
+          isNotifications={view === 'notifications'}
         />
 
         <div className="relative lg:pl-20">
@@ -43,6 +47,7 @@ export default function Page() {
                 {view === 'prizes' && <PrizesView />}
                 {view === 'challenges' && <ChallengesView />}
                 {view === 'profile' && <ProfileView />}
+                {view === 'notifications' && <NotificationsView />}
                 {view === 'soon' && <ComingSoonView />}
               </motion.div>
             </AnimatePresence>
@@ -50,5 +55,6 @@ export default function Page() {
         </div>
       </div>
     </UserProvider>
+    </RegionProvider>
   )
 }

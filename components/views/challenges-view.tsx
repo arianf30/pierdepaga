@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Swords, Flame, Crown, X, Search, Zap, Coins } from 'lucide-react'
-import { challengers, type MatchTypeLabel, type Player } from '@/lib/data'
+import { challengers, type MatchType, type Player } from '@/lib/data'
 import {
   fadeUp,
   statusColor,
@@ -14,11 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useUser } from '@/components/auth/user-provider'
 
-const matchTypes: MatchTypeLabel[] = [
-  'Partido normal',
-  'Partido desafío',
-  'Pierde paga',
-]
+const matchTypes: MatchType[] = ['Partido simple', 'Desafío pierde paga']
 
 const filters = ['Todos', 'En línea', 'Top 5', 'Rivales'] as const
 
@@ -26,7 +22,7 @@ export function ChallengesView() {
   const { player } = useUser()
   const [selected, setSelected] = useState<Player | null>(null)
   const [filter, setFilter] = useState<(typeof filters)[number]>('Todos')
-  const [matchType, setMatchType] = useState<MatchTypeLabel>('Pierde paga')
+  const [matchType, setMatchType] = useState<MatchType>('Desafío pierde paga')
 
   const list = challengers.filter((p) => {
     if (filter === 'En línea') return p.status !== 'offline'
@@ -195,7 +191,7 @@ export function ChallengesView() {
               <div className="space-y-5 p-6">
                 <div>
                   <p className="type-label mb-2 text-[11px]">Tipo de partido</p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     {matchTypes.map((t) => (
                       <button
                         key={t}
@@ -207,17 +203,13 @@ export function ChallengesView() {
                             : 'border-border bg-secondary/40 text-muted-foreground hover:text-foreground',
                         )}
                       >
-                        {t === 'Partido normal'
-                          ? 'Normal'
-                          : t === 'Partido desafío'
-                            ? 'Desafío'
-                            : 'Pierde paga'}
+                        {t === 'Partido simple' ? 'Simple' : 'Pierde paga'}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {matchType === 'Pierde paga' && (
+                {matchType === 'Desafío pierde paga' && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}

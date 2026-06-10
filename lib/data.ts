@@ -1,9 +1,12 @@
+import { POSITIVE_STREAK_MILESTONES } from '@/lib/streaks'
+
 export type View =
   | 'home'
   | 'ranking'
   | 'prizes'
   | 'challenges'
   | 'profile'
+  | 'notifications'
   | 'soon'
 
 export type Player = {
@@ -12,6 +15,8 @@ export type Player = {
   handle: string
   avatar: string
   rank: number
+  /** Cambio de puesto reciente. Positivo = subió, negativo = bajó. */
+  rankDelta: number
   tier: string
   wins: number
   losses: number
@@ -21,32 +26,91 @@ export type Player = {
   status: 'online' | 'in-match' | 'offline'
 }
 
+export type PlayerProfileData = {
+  firstName: string
+  lastName: string
+  instagram?: string
+  dni: string
+  avatar: string
+  setsWon: number
+  setsLost: number
+  gamesWon: number
+  gamesLost: number
+}
+
+export const defaultProfile: PlayerProfileData = {
+  firstName: 'Marco',
+  lastName: 'Vidal',
+  instagram: '',
+  dni: '30123456',
+  avatar: '/player-1.png',
+  setsWon: 412,
+  setsLost: 198,
+  gamesWon: 2840,
+  gamesLost: 2210,
+}
+
+/** DNIs ya registrados (mock hasta conectar Supabase). */
+export const takenDnis = new Set(['28999888', '30111222'])
+
+export type WonPrize = {
+  id: string
+  name: string
+  detail: string
+  sponsor?: string
+  date: string
+  type: 'ranking' | 'racha'
+}
+
+export const wonPrizes: WonPrize[] = [
+  {
+    id: 'wp1',
+    name: 'Cubregrip PierdePaga',
+    detail: `Racha de +${POSITIVE_STREAK_MILESTONES[0]} victorias`,
+    sponsor: 'Paddle Pro',
+    date: 'Mar 2026',
+    type: 'racha',
+  },
+  {
+    id: 'wp2',
+    name: 'Remera edición limitada',
+    detail: `Racha de +${POSITIVE_STREAK_MILESTONES[1]} victorias`,
+    sponsor: 'SportZone',
+    date: 'Feb 2026',
+    type: 'racha',
+  },
+]
+
 export const me: Player = {
   id: 'me',
   name: 'Marco Vidal',
   handle: '@elmuro',
   avatar: '/player-1.png',
   rank: 7,
+  rankDelta: 2,
   tier: 'Diamante II',
   wins: 184,
   losses: 63,
-  streak: 6,
+  streak: 2,
   rating: 2480,
   region: 'Buenos Aires',
   status: 'online',
 }
 
-export const topPlayers: Player[] = [
+export const topPlayers: Player[] = []
+
+export const leaderboard: Player[] = [
   {
     id: 'p2',
     name: 'Sofía Reyes',
     handle: '@sofireyes',
     avatar: '/player-2.png',
     rank: 1,
+    rankDelta: 0,
     tier: 'Leyenda Apex',
     wins: 412,
     losses: 71,
-    streak: 14,
+    streak: 3,
     rating: 3240,
     region: 'CABA',
     status: 'in-match',
@@ -57,42 +121,41 @@ export const topPlayers: Player[] = [
     handle: '@dmarin',
     avatar: '/player-3.png',
     rank: 2,
+    rankDelta: 1,
     tier: 'Leyenda Apex',
     wins: 388,
     losses: 90,
-    streak: 9,
+    streak: 8,
     rating: 3110,
     region: 'La Plata',
     status: 'online',
   },
   {
-    id: 'p1',
-    name: 'Marco Vidal',
-    handle: '@elmuro',
-    avatar: '/player-1.png',
+    id: 'p9',
+    name: 'Valentina Ríos',
+    handle: '@valrios',
+    avatar: '/player-2.png',
     rank: 3,
+    rankDelta: 2,
     tier: 'Diamante I',
-    wins: 184,
-    losses: 63,
-    streak: 6,
-    rating: 2480,
-    region: 'Buenos Aires',
+    wins: 356,
+    losses: 82,
+    streak: 2,
+    rating: 2980,
+    region: 'CABA',
     status: 'online',
   },
-]
-
-export const leaderboard: Player[] = [
-  ...topPlayers,
   {
     id: 'p4',
     name: 'Lucía Fernández',
     handle: '@luciaf',
     avatar: '/player-2.png',
     rank: 4,
+    rankDelta: -1,
     tier: 'Diamante I',
     wins: 301,
     losses: 88,
-    streak: 4,
+    streak: 1,
     rating: 2390,
     region: 'Rosario',
     status: 'online',
@@ -103,20 +166,52 @@ export const leaderboard: Player[] = [
     handle: '@taguilar',
     avatar: '/player-3.png',
     rank: 5,
+    rankDelta: 0,
     tier: 'Diamante II',
     wins: 277,
     losses: 102,
-    streak: 2,
+    streak: 5,
     rating: 2310,
     region: 'Córdoba',
     status: 'offline',
+  },
+  {
+    id: 'p10',
+    name: 'Nicolás Pereyra',
+    handle: '@nicop',
+    avatar: '/player-3.png',
+    rank: 6,
+    rankDelta: 1,
+    tier: 'Diamante II',
+    wins: 265,
+    losses: 98,
+    streak: 3,
+    rating: 2260,
+    region: 'Resistencia',
+    status: 'online',
+  },
+  {
+    id: 'me',
+    name: 'Marco Vidal',
+    handle: '@elmuro',
+    avatar: '/player-1.png',
+    rank: 7,
+    rankDelta: 2,
+    tier: 'Diamante II',
+    wins: 184,
+    losses: 63,
+    streak: 2,
+    rating: 2480,
+    region: 'Buenos Aires',
+    status: 'online',
   },
   {
     id: 'p6',
     name: 'Elena Castro',
     handle: '@elenac',
     avatar: '/player-2.png',
-    rank: 6,
+    rank: 8,
+    rankDelta: -1,
     tier: 'Platino I',
     wins: 240,
     losses: 95,
@@ -130,7 +225,8 @@ export const leaderboard: Player[] = [
     name: 'Hugo Navarro',
     handle: '@hnavarro',
     avatar: '/player-3.png',
-    rank: 7,
+    rank: 9,
+    rankDelta: 0,
     tier: 'Platino I',
     wins: 219,
     losses: 110,
@@ -144,18 +240,201 @@ export const leaderboard: Player[] = [
     name: 'Carla Ortega',
     handle: '@carlao',
     avatar: '/player-2.png',
-    rank: 8,
+    rank: 10,
+    rankDelta: -2,
     tier: 'Platino II',
     wins: 198,
     losses: 121,
-    streak: 3,
+    streak: -3,
     rating: 2090,
     region: 'Tigre',
     status: 'online',
   },
+  {
+    id: 'p11',
+    name: 'Facundo López',
+    handle: '@facul',
+    avatar: '/player-1.png',
+    rank: 11,
+    rankDelta: -1,
+    tier: 'Platino II',
+    wins: 187,
+    losses: 115,
+    streak: -5,
+    rating: 2050,
+    region: 'Formosa',
+    status: 'offline',
+  },
+  {
+    id: 'p12',
+    name: 'Camila Duarte',
+    handle: '@camid',
+    avatar: '/player-2.png',
+    rank: 12,
+    rankDelta: 1,
+    tier: 'Platino II',
+    wins: 176,
+    losses: 108,
+    streak: -1,
+    rating: 2010,
+    region: 'Corrientes',
+    status: 'online',
+  },
+  {
+    id: 'p13',
+    name: 'Javier Morales',
+    handle: '@javierm',
+    avatar: '/player-3.png',
+    rank: 13,
+    rankDelta: 0,
+    tier: 'Oro I',
+    wins: 165,
+    losses: 112,
+    streak: 1,
+    rating: 1980,
+    region: 'Resistencia',
+    status: 'in-match',
+  },
+  {
+    id: 'p14',
+    name: 'Paula Méndez',
+    handle: '@paulam',
+    avatar: '/player-2.png',
+    rank: 14,
+    rankDelta: -1,
+    tier: 'Oro I',
+    wins: 158,
+    losses: 119,
+    streak: -3,
+    rating: 1920,
+    region: 'Formosa',
+    status: 'online',
+  },
+  {
+    id: 'p15',
+    name: 'Ricardo Soto',
+    handle: '@richs',
+    avatar: '/player-3.png',
+    rank: 15,
+    rankDelta: 1,
+    tier: 'Oro II',
+    wins: 142,
+    losses: 124,
+    streak: -2,
+    rating: 1860,
+    region: 'Corrientes',
+    status: 'offline',
+  },
+  {
+    id: 'p16',
+    name: 'Andrea Villalba',
+    handle: '@andrev',
+    avatar: '/player-2.png',
+    rank: 16,
+    rankDelta: 2,
+    tier: 'Oro II',
+    wins: 131,
+    losses: 128,
+    streak: 3,
+    rating: 1810,
+    region: 'Formosa',
+    status: 'online',
+  },
+  {
+    id: 'p17',
+    name: 'Gonzalo Paz',
+    handle: '@gonpaz',
+    avatar: '/player-1.png',
+    rank: 17,
+    rankDelta: -2,
+    tier: 'Oro II',
+    wins: 120,
+    losses: 130,
+    streak: -5,
+    rating: 1750,
+    region: 'Resistencia',
+    status: 'online',
+  },
+  {
+    id: 'p18',
+    name: 'Martina Acosta',
+    handle: '@martia',
+    avatar: '/player-2.png',
+    rank: 18,
+    rankDelta: 0,
+    tier: 'Plata I',
+    wins: 108,
+    losses: 135,
+    streak: -2,
+    rating: 1690,
+    region: 'Corrientes',
+    status: 'offline',
+  },
+  {
+    id: 'p19',
+    name: 'Leandro Funes',
+    handle: '@leof',
+    avatar: '/player-3.png',
+    rank: 19,
+    rankDelta: -3,
+    tier: 'Plata I',
+    wins: 95,
+    losses: 140,
+    streak: -8,
+    rating: 1620,
+    region: 'Formosa',
+    status: 'online',
+  },
+  {
+    id: 'p20',
+    name: 'Bianca Romero',
+    handle: '@biancar',
+    avatar: '/player-2.png',
+    rank: 20,
+    rankDelta: 1,
+    tier: 'Plata II',
+    wins: 88,
+    losses: 148,
+    streak: -1,
+    rating: 1550,
+    region: 'Resistencia',
+    status: 'in-match',
+  },
+  {
+    id: 'p21',
+    name: 'Sebastián Vera',
+    handle: '@sebvera',
+    avatar: '/player-1.png',
+    rank: 21,
+    rankDelta: 0,
+    tier: 'Plata II',
+    wins: 76,
+    losses: 152,
+    streak: 0,
+    rating: 1480,
+    region: 'Corrientes',
+    status: 'online',
+  },
+  {
+    id: 'p22',
+    name: 'Florencia Núñez',
+    handle: '@florn',
+    avatar: '/player-2.png',
+    rank: 22,
+    rankDelta: -1,
+    tier: 'Bronce I',
+    wins: 64,
+    losses: 158,
+    streak: -11,
+    rating: 1410,
+    region: 'Formosa',
+    status: 'offline',
+  },
 ]
 
-export const challengers: Player[] = leaderboard.filter((p) => p.id !== 'p1')
+export const challengers: Player[] = leaderboard.filter((p) => p.id !== 'me')
+
+export const RANKING_PAGE_SIZE = 10
 
 export type Activity = {
   id: string
@@ -199,28 +478,176 @@ export const recentActivity: Activity[] = [
   },
 ]
 
-export type MatchTypeLabel = 'Partido normal' | 'Partido desafío' | 'Pierde paga'
+export type MatchType = 'Partido simple' | 'Desafío pierde paga'
 
 export type ChallengeInvite = {
   id: string
   player: Player
-  matchType: MatchTypeLabel
+  matchType: MatchType
   stake: string
   expires: string
+}
+
+export type ScheduledMatch = {
+  id: string
+  type: MatchType
+  club: string
+  scheduledAt: string
+  teamA: [Player, Player]
+  teamB: [Player, Player]
+  stake?: string
+}
+
+export const scheduledMatches: ScheduledMatch[] = [
+  {
+    id: 's1',
+    type: 'Desafío pierde paga',
+    club: 'Club Padel Formosa',
+    scheduledAt: 'Hoy · 18:30',
+    teamA: [leaderboard[2], leaderboard[5]],
+    teamB: [leaderboard[1], leaderboard[3]],
+    stake: '$10.000',
+  },
+  {
+    id: 's2',
+    type: 'Partido simple',
+    club: 'Arena Norte',
+    scheduledAt: 'Mañana · 10:00',
+    teamA: [leaderboard[0], leaderboard[4]],
+    teamB: [leaderboard[6], leaderboard[7]],
+  },
+  {
+    id: 's3',
+    type: 'Desafío pierde paga',
+    club: 'Padel Center Resistencia',
+    scheduledAt: 'Sáb · 20:00',
+    teamA: [leaderboard[3], leaderboard[4]],
+    teamB: [leaderboard[0], leaderboard[2]],
+    stake: '$15.000',
+  },
+]
+
+export type DoublesSides = {
+  teamA: [Player, Player]
+  teamB: [Player, Player]
+}
+
+export type PlayedDoublesMatch = DoublesSides & {
+  id: string
+  type: MatchType
+  winnerTeam: 'A' | 'B'
+  score: string
+  time: string
+  stake?: string
+  skillTransferred?: number
+}
+
+/** Menor = más reciente. */
+export const playedDoublesMatches: PlayedDoublesMatch[] = [
+  {
+    id: 'p1',
+    type: 'Desafío pierde paga',
+    teamA: [leaderboard[2], leaderboard[5]],
+    teamB: [leaderboard[1], leaderboard[3]],
+    winnerTeam: 'A',
+    score: '6-4 6-3',
+    time: 'hace 2 h',
+    stake: '$10.000',
+    skillTransferred: 48,
+  },
+  {
+    id: 'p2',
+    type: 'Partido simple',
+    teamA: [leaderboard[1], leaderboard[4]],
+    teamB: [leaderboard[6], leaderboard[7]],
+    winnerTeam: 'A',
+    score: '6-3 6-4',
+    time: 'hace 4 h',
+  },
+  {
+    id: 'p3',
+    type: 'Desafío pierde paga',
+    teamA: [leaderboard[0], leaderboard[2]],
+    teamB: [leaderboard[1], leaderboard[3]],
+    winnerTeam: 'B',
+    score: '4-6 3-6',
+    time: 'hace 6 h',
+    stake: '$8.000',
+    skillTransferred: 62,
+  },
+  {
+    id: 'p4',
+    type: 'Partido simple',
+    teamA: [leaderboard[0], leaderboard[3]],
+    teamB: [leaderboard[4], leaderboard[5]],
+    winnerTeam: 'A',
+    score: '7-6 6-2',
+    time: 'hace 8 h',
+  },
+  {
+    id: 'p5',
+    type: 'Desafío pierde paga',
+    teamA: [leaderboard[3], leaderboard[4]],
+    teamB: [leaderboard[0], leaderboard[1]],
+    winnerTeam: 'A',
+    score: '7-6 6-4',
+    time: 'ayer',
+    stake: '$12.000',
+    skillTransferred: 55,
+  },
+  {
+    id: 'p6',
+    type: 'Partido simple',
+    teamA: [leaderboard[2], leaderboard[5]],
+    teamB: [leaderboard[6], leaderboard[7]],
+    winnerTeam: 'A',
+    score: '6-1 6-2',
+    time: 'ayer',
+  },
+]
+
+export function doublesSkillTotal(match: DoublesSides): number {
+  return [...match.teamA, ...match.teamB].reduce((sum, p) => sum + p.rating, 0)
+}
+
+export function teamLabel(players: [Player, Player]): string {
+  return `${players[0].name.split(' ')[0]} & ${players[1].name.split(' ')[0]}`
+}
+
+const HIGH_STAKES_SKILL = 9000
+
+export function isHighStakesMatch(match: PlayedDoublesMatch): boolean {
+  return (
+    match.type === 'Desafío pierde paga' &&
+    doublesSkillTotal(match) >= HIGH_STAKES_SKILL
+  )
+}
+
+/** Feed con desafíos de alto nivel arriba; el resto en orden de llegada. */
+export function buildArenaFeed(matches: PlayedDoublesMatch[]): PlayedDoublesMatch[] {
+  return [...matches]
+    .map((m, i) => ({ m, i }))
+    .sort((a, b) => {
+      const aBoost = isHighStakesMatch(a.m) ? 0 : 1
+      const bBoost = isHighStakesMatch(b.m) ? 0 : 1
+      if (aBoost !== bBoost) return aBoost - bBoost
+      return a.i - b.i
+    })
+    .map(({ m }) => m)
 }
 
 export const incomingChallenges: ChallengeInvite[] = [
   {
     id: 'c1',
     player: leaderboard[6],
-    matchType: 'Pierde paga',
+    matchType: 'Desafío pierde paga',
     stake: '$10.000',
     expires: '11 h',
   },
   {
     id: 'c2',
     player: leaderboard[4],
-    matchType: 'Partido desafío',
+    matchType: 'Desafío pierde paga',
     stake: '$4.000',
     expires: '1 d',
   },
@@ -283,7 +710,7 @@ export type MatchRecord = {
   id: string
   opponent: string
   avatar: string
-  type: 'Normal' | 'Desafío' | 'Pierde paga'
+  type: MatchType
   result: 'G' | 'P'
   score: string
   date: string
@@ -294,7 +721,7 @@ export const matchHistory: MatchRecord[] = [
     id: 'm1',
     opponent: 'Diego Marín',
     avatar: '/player-3.png',
-    type: 'Pierde paga',
+    type: 'Desafío pierde paga',
     result: 'G',
     score: '6-4 7-5',
     date: 'Hoy',
@@ -303,7 +730,7 @@ export const matchHistory: MatchRecord[] = [
     id: 'm2',
     opponent: 'Sofía Reyes',
     avatar: '/player-2.png',
-    type: 'Desafío',
+    type: 'Partido simple',
     result: 'P',
     score: '3-6 4-6',
     date: 'Ayer',
@@ -312,7 +739,7 @@ export const matchHistory: MatchRecord[] = [
     id: 'm3',
     opponent: 'Hugo Navarro',
     avatar: '/player-3.png',
-    type: 'Pierde paga',
+    type: 'Desafío pierde paga',
     result: 'G',
     score: '6-2 6-3',
     date: 'hace 2 d',
@@ -321,7 +748,7 @@ export const matchHistory: MatchRecord[] = [
     id: 'm4',
     opponent: 'Carla Ortega',
     avatar: '/player-2.png',
-    type: 'Normal',
+    type: 'Partido simple',
     result: 'G',
     score: '7-6 6-4',
     date: 'hace 4 d',
@@ -330,9 +757,29 @@ export const matchHistory: MatchRecord[] = [
     id: 'm5',
     opponent: 'Tomás Aguilar',
     avatar: '/player-3.png',
-    type: 'Desafío',
+    type: 'Partido simple',
     result: 'P',
     score: '5-7 6-7',
     date: 'hace 5 d',
   },
+  {
+    id: 'm6',
+    opponent: 'Elena Castro',
+    avatar: '/player-2.png',
+    type: 'Desafío pierde paga',
+    result: 'G',
+    score: '6-3 6-1',
+    date: 'hace 6 d',
+  },
+  {
+    id: 'm7',
+    opponent: 'Lucía Fernández',
+    avatar: '/player-2.png',
+    type: 'Partido simple',
+    result: 'G',
+    score: '6-4 3-6 10-7',
+    date: 'hace 8 d',
+  },
 ]
+
+export const PROFILE_MATCH_PREVIEW = 4

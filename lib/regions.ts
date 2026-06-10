@@ -20,3 +20,7 @@ export const PROVINCES_BY_COUNTRY: Record<CountryId, string[]> = {
 export function provincesFor(countryId: CountryId): string[] {
   return PROVINCES_BY_COUNTRY[countryId]
 }
+
+export function rankingLabel(province: string): string {
+  return `Ranking ${province}`
+}

@@ -1,12 +1,9 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { ChevronDown } from 'lucide-react'
-import {
-  COUNTRIES,
-  provincesFor,
-  type CountryId,
-} from '@/lib/regions'
+import { useRegion } from '@/components/region-provider'
+import { COUNTRIES, provincesFor, type CountryId } from '@/lib/regions'
 import { cn } from '@/lib/utils'
 
 const valueClass =
@@ -69,14 +66,7 @@ function SelectShell({
 }
 
 export function RegionSelectors({ className }: { className?: string }) {
-  const [country, setCountry] = useState<CountryId>('ar')
-  const [province, setProvince] = useState(provincesFor('ar')[0])
-
-  function handleCountryChange(next: CountryId) {
-    setCountry(next)
-    setProvince(provincesFor(next)[0])
-  }
-
+  const { country, province, setCountry, setProvince } = useRegion()
   const selectedCountry = COUNTRIES.find((c) => c.id === country)!
 
   return (
@@ -86,7 +76,7 @@ export function RegionSelectors({ className }: { className?: string }) {
         flagOnly
         className="size-11 shrink-0"
         value={country}
-        onChange={(v) => handleCountryChange(v as CountryId)}
+        onChange={(v) => setCountry(v as CountryId)}
         options={COUNTRIES.map((c) => ({
           value: c.id,
           label: `${c.flag} ${c.name}`,
