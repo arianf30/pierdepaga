@@ -20,6 +20,7 @@ import {
   type PublicPlayerProfile,
   type WonPrize,
 } from '@/lib/data'
+import { PerformanceDonut } from '@/components/profile/performance-donut'
 import { SectionTitle, fadeUp, GhostButton } from '@/components/ui-kit'
 import { cn } from '@/lib/utils'
 import { playerPublicName } from '@/lib/player-names'
@@ -94,10 +95,6 @@ export function PlayerProfileContent({
 
   const totalMatches = player.wins + player.losses
   const winRate = Math.round((player.wins / totalMatches) * 100)
-  const totalSets = profile.setsWon + profile.setsLost
-  const setsWinRate = Math.round((profile.setsWon / totalSets) * 100)
-  const totalGames = profile.gamesWon + profile.gamesLost
-  const gamesWinRate = Math.round((profile.gamesWon / totalGames) * 100)
   const visibleMatches = showAllMatches
     ? matchHistory
     : matchHistory.slice(0, PROFILE_MATCH_PREVIEW)
@@ -246,77 +243,14 @@ export function PlayerProfileContent({
           ))}
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            {
-              label: 'Sets ganados',
-              value: profile.setsWon,
-              tone: 'text-primary',
-            },
-            {
-              label: 'Sets perdidos',
-              value: profile.setsLost,
-              tone: 'text-destructive',
-            },
-            {
-              label: 'Win rate',
-              value: `${setsWinRate}%`,
-              tone: 'text-accent',
-            },
-          ].map((s, i) => (
-            <motion.div
-              key={s.label}
-              {...fadeUp(i + 4)}
-              className="rounded-2xl border border-border bg-card/60 p-4"
-            >
-              <p
-                className={cn(
-                  'font-display text-2xl font-black tabular-nums',
-                  s.tone,
-                )}
-              >
-                {s.value}
-              </p>
-              <p className="type-label mt-1 text-[11px]">{s.label}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            {
-              label: 'Games ganados',
-              value: profile.gamesWon,
-              tone: 'text-primary',
-            },
-            {
-              label: 'Games perdidos',
-              value: profile.gamesLost,
-              tone: 'text-destructive',
-            },
-            {
-              label: 'Win rate',
-              value: `${gamesWinRate}%`,
-              tone: 'text-accent',
-            },
-          ].map((s, i) => (
-            <motion.div
-              key={s.label}
-              {...fadeUp(i + 7)}
-              className="rounded-2xl border border-border bg-card/60 p-4"
-            >
-              <p
-                className={cn(
-                  'font-display text-2xl font-black tabular-nums',
-                  s.tone,
-                )}
-              >
-                {s.value}
-              </p>
-              <p className="type-label mt-1 text-[11px]">{s.label}</p>
-            </motion.div>
-          ))}
-        </div>
+        <motion.div {...fadeUp(4)}>
+          <PerformanceDonut
+            setsWon={profile.setsWon}
+            setsLost={profile.setsLost}
+            gamesWon={profile.gamesWon}
+            gamesLost={profile.gamesLost}
+          />
+        </motion.div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

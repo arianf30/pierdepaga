@@ -31,6 +31,7 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
   const isPublic =
+    pathname === '/' ||
     pathname.startsWith('/auth') ||
     pathname === '/login' ||
     pathname === '/tipografias' ||
@@ -44,9 +45,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (user && pathname === '/login') {
+  if (user && (pathname === '/login' || pathname === '/')) {
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    url.pathname = '/inicio'
     return NextResponse.redirect(url)
   }
 

@@ -1,16 +1,6 @@
 import { playerMatchesSearch, playerShortPublicName } from '@/lib/player-names'
 import { POSITIVE_STREAK_MILESTONES } from '@/lib/streaks'
 
-export type View =
-  | 'home'
-  | 'ranking'
-  | 'prizes'
-  | 'challenges'
-  | 'profile'
-  | 'player-profile'
-  | 'notifications'
-  | 'soon'
-
 export type Player = {
   id: string
   /** Nombre y apellido reales. */

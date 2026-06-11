@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CirclePlus, Swords, Trophy } from 'lucide-react'
@@ -8,8 +9,8 @@ import {
   isHighStakesMatch,
   playedDoublesMatches,
   scheduledMatches,
-  type View,
 } from '@/lib/data'
+import { routes } from '@/lib/routes'
 import {
   SectionTitle,
   StatChip,
@@ -29,7 +30,8 @@ import {
 import { LoadMatchModal } from '@/components/challenges/load-match-modal'
 import { PierdePagaChallengeModal } from '@/components/challenges/pierde-paga-challenge-modal'
 
-export function HomeView({ setView }: { setView: (v: View) => void }) {
+export function HomeView() {
+  const router = useRouter()
   const [loadMatchOpen, setLoadMatchOpen] = useState(false)
   const [pierdePagaOpen, setPierdePagaOpen] = useState(false)
   const { player } = useUser()
@@ -86,7 +88,10 @@ export function HomeView({ setView }: { setView: (v: View) => void }) {
               <AccentButton onClick={() => setPierdePagaOpen(true)}>
                 <Swords className="size-4" /> Pierde Paga
               </AccentButton>
-              <GhostButton onClick={() => setView('ranking')}>
+              <GhostButton
+                type="button"
+                onClick={() => router.push(routes.ranking)}
+              >
                 <Trophy className="size-4" /> Ver ranking
               </GhostButton>
             </motion.div>

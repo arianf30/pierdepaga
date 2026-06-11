@@ -6,7 +6,7 @@ import { PlayerProfileContent } from '@/components/profile/player-profile-conten
 import { ProfileEditSheet } from '@/components/profile/profile-edit-sheet'
 import { useUser } from '@/components/auth/user-provider'
 import { useRegion } from '@/components/region-provider'
-import { COUNTRIES } from '@/lib/regions'
+import { availableCountryById, isCountryId } from '@/lib/catalog'
 
 export function ProfileView() {
   const { player, profile, updateProfile } = useUser()
@@ -14,7 +14,7 @@ export function ProfileView() {
     useRegion()
   const [editing, setEditing] = useState(false)
 
-  const countryName = COUNTRIES.find((c) => c.id === country)?.name ?? ''
+  const countryName = availableCountryById(country).name
   const regionLabel = `${countryName} · ${province}`
 
   function handleSave({
@@ -28,7 +28,8 @@ export function ProfileView() {
   }) {
     const err = updateProfile(nextProfile)
     if (err) return err
-    setCountry(nextCountry as 'ar' | 'py')
+    if (!isCountryId(nextCountry)) return 'País no disponible.'
+    setCountry(nextCountry)
     setProvince(nextProvince)
     return null
   }

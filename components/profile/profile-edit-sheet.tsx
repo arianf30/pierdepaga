@@ -2,9 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Camera, X } from 'lucide-react'
-import { COUNTRIES, provincesFor } from '@/lib/regions'
+import {
+  AVAILABLE_COUNTRIES,
+  availableCountryById,
+  availableProvincesFor,
+  defaultProvinceFor,
+  isCountryId,
+} from '@/lib/catalog'
 import type { PlayerProfileData } from '@/lib/data'
 import { GhostButton, PrimaryButton } from '@/components/ui-kit'
+import { SelectShell, selectValueClass } from '@/components/ui/select-shell'
 import { cn } from '@/lib/utils'
 
 type ProfileEditSheetProps = {
@@ -49,10 +56,14 @@ export function ProfileEditSheet({
 
   if (!open) return null
 
+  const selectedCountry = isCountryId(draftCountry)
+    ? availableCountryById(draftCountry)
+    : availableCountryById(AVAILABLE_COUNTRIES[0].id)
+
   function handleCountryChange(next: string) {
+    if (!isCountryId(next)) return
     setDraftCountry(next)
-    const provinces = provincesFor(next as 'ar' | 'py')
-    setDraftProvince(provinces[0])
+    setDraftProvince(defaultProvinceFor(next))
   }
 
   function handlePhotoChange(file: File | undefined) {
@@ -221,39 +232,46 @@ export function ProfileEditSheet({
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className={labelClass} htmlFor="country">
-              País
-            </label>
-            <select
-              id="country"
-              className={cn(inputClass, 'cursor-pointer')}
+          <div className="min-w-0">
+            <p className={labelClass}>País</p>
+            <SelectShell
+              label="País"
+              className="w-full"
               value={draftCountry}
-              onChange={(e) => handleCountryChange(e.target.value)}
+              onChange={handleCountryChange}
+              options={AVAILABLE_COUNTRIES.map((item) => ({
+                value: item.id,
+                label: `${item.flag} ${item.name}`,
+              }))}
             >
-              {COUNTRIES.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.flag} {c.name}
-                </option>
-              ))}
-            </select>
+              <span className="shrink-0 text-lg leading-none">
+                {selectedCountry.flag}
+              </span>
+              <span className="min-w-0 truncate text-sm font-semibold">
+                {selectedCountry.name}
+              </span>
+            </SelectShell>
           </div>
-          <div>
-            <label className={labelClass} htmlFor="province">
-              Provincia o ciudad
-            </label>
-            <select
-              id="province"
-              className={cn(inputClass, 'cursor-pointer')}
+          <div className="min-w-0">
+            <p className={labelClass}>Provincia o ciudad</p>
+            <SelectShell
+              label="Provincia o ciudad"
+              className="w-full"
               value={draftProvince}
-              onChange={(e) => setDraftProvince(e.target.value)}
+              onChange={setDraftProvince}
+              options={availableProvincesFor(
+                isCountryId(draftCountry)
+                  ? draftCountry
+                  : AVAILABLE_COUNTRIES[0].id,
+              ).map((item) => ({
+                value: item,
+                label: item.toUpperCase(),
+              }))}
             >
-              {provincesFor(draftCountry as 'ar' | 'py').map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+              <span className={cn(selectValueClass, 'min-w-0 truncate')}>
+                {draftProvince.toUpperCase()}
+              </span>
+            </SelectShell>
           </div>
         </div>
 

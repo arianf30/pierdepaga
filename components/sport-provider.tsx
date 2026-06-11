@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { sportLabel, type SportId } from '@/lib/sports'
+import { DEFAULT_SPORT_ID, sportLabel, type SportId } from '@/lib/catalog'
 
 type SportContextValue = {
   sport: SportId
@@ -17,7 +17,7 @@ type SportContextValue = {
 const SportContext = createContext<SportContextValue | null>(null)
 
 export function SportProvider({ children }: { children: ReactNode }) {
-  const [sport, setSport] = useState<SportId>('padel')
+  const [sport, setSport] = useState<SportId>(DEFAULT_SPORT_ID)
 
   return (
     <SportContext.Provider

@@ -1,86 +1,12 @@
-'use client'
+import type { Metadata } from 'next'
+import { LandingPage } from '@/components/landing/landing-page'
 
-import { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import type { View } from '@/lib/data'
-import { Atmosphere } from '@/components/atmosphere'
-import { ConsoleNav, TopBar } from '@/components/console-nav'
-import { HomeView } from '@/components/views/home-view'
-import { RankingView } from '@/components/views/ranking-view'
-import { ProfileView } from '@/components/views/profile-view'
-import { PlayerProfileView } from '@/components/views/player-profile-view'
-import { ChallengesView } from '@/components/views/challenges-view'
-import { PrizesView } from '@/components/views/prizes-view'
-import { ComingSoonView } from '@/components/views/coming-soon-view'
-import { UserProvider } from '@/components/auth/user-provider'
-import { RegionProvider } from '@/components/region-provider'
-import { SportProvider } from '@/components/sport-provider'
+export const metadata: Metadata = {
+  title: 'PierdePaga — El que pierde, paga',
+  description:
+    'Pádel competitivo gratis por premios. Ranking por provincia, desafíos pierde paga y partidos simples en canchas reales. Competí y hacé que tu rival pague.',
+}
 
-export default function Page() {
-  const [view, setView] = useState<View>('home')
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
-
-  function openPlayerProfile(playerId: string) {
-    if (playerId === 'me') {
-      setSelectedPlayerId(null)
-      setView('profile')
-      return
-    }
-    setSelectedPlayerId(playerId)
-    setView('player-profile')
-  }
-
-  return (
-    <RegionProvider>
-    <SportProvider>
-    <UserProvider>
-      <div className="relative min-h-screen">
-        <Atmosphere />
-
-        <ConsoleNav view={view} setView={setView} />
-        <TopBar
-          onProfile={() => setView('profile')}
-          isProfile={view === 'profile'}
-        />
-
-        <div className="relative lg:pl-20">
-          <main className="mx-auto w-full max-w-7xl px-4 pb-28 pt-[5.5rem] sm:px-6 lg:px-10 lg:pb-10 lg:pt-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={
-                  view === 'player-profile'
-                    ? `player-profile-${selectedPlayerId}`
-                    : view
-                }
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              >
-                {view === 'home' && <HomeView setView={setView} />}
-                {view === 'ranking' && (
-                  <RankingView
-                    setView={setView}
-                    onViewPlayer={openPlayerProfile}
-                  />
-                )}
-                {view === 'prizes' && <PrizesView />}
-                {view === 'challenges' && <ChallengesView />}
-                {view === 'profile' && <ProfileView />}
-                {view === 'player-profile' && selectedPlayerId && (
-                  <PlayerProfileView
-                    playerId={selectedPlayerId}
-                    onBack={() => setView('ranking')}
-                  />
-                )}
-                {view === 'soon' && <ComingSoonView />}
-              </motion.div>
-            </AnimatePresence>
-          </main>
-        </div>
-      </div>
-    </UserProvider>
-    </SportProvider>
-    </RegionProvider>
-  )
+export default function LandingRoute() {
+  return <LandingPage />
 }

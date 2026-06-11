@@ -7,10 +7,12 @@ import {
   type ReactNode,
 } from 'react'
 import {
-  provincesFor,
+  DEFAULT_COUNTRY_ID,
+  availableProvincesFor,
+  defaultProvinceFor,
   rankingLabel,
   type CountryId,
-} from '@/lib/regions'
+} from '@/lib/catalog'
 
 type RegionContextValue = {
   country: CountryId
@@ -24,12 +26,20 @@ type RegionContextValue = {
 const RegionContext = createContext<RegionContextValue | null>(null)
 
 export function RegionProvider({ children }: { children: ReactNode }) {
-  const [country, setCountryState] = useState<CountryId>('ar')
-  const [province, setProvince] = useState(provincesFor('ar')[0])
+  const [country, setCountryState] = useState<CountryId>(DEFAULT_COUNTRY_ID)
+  const [province, setProvince] = useState(
+    defaultProvinceFor(DEFAULT_COUNTRY_ID),
+  )
 
   function setCountry(next: CountryId) {
     setCountryState(next)
-    setProvince(provincesFor(next)[0])
+    setProvince(defaultProvinceFor(next))
+  }
+
+  function setProvinceSafe(next: string) {
+    const provinces = availableProvincesFor(country)
+    if (!provinces.includes(next)) return
+    setProvince(next)
   }
 
   const rankingTitle = rankingLabel(province)
@@ -41,7 +51,7 @@ export function RegionProvider({ children }: { children: ReactNode }) {
         country,
         province,
         setCountry,
-        setProvince,
+        setProvince: setProvinceSafe,
         rankingTitle,
         rankingKicker,
       }}

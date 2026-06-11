@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   Home,
@@ -8,7 +10,7 @@ import {
   Swords,
   LogOut,
 } from 'lucide-react'
-import type { View } from '@/lib/data'
+import { isNavActive, isProfileActive, routes } from '@/lib/routes'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/components/auth/user-provider'
 import { getInitials } from '@/lib/auth/user'
@@ -21,41 +23,36 @@ import { BrandLogo } from '@/components/brand-logo'
 import { playerPublicName } from '@/lib/player-names'
 import { RegionSelectors } from '@/components/region-selectors'
 
-const items: { id: View; label: string; icon: typeof Home }[] = [
-  { id: 'home', label: 'Inicio', icon: Home },
-  { id: 'ranking', label: 'Ranking', icon: Trophy },
-  { id: 'prizes', label: 'Premios', icon: Medal },
-  { id: 'challenges', label: 'Desafíos', icon: Swords },
-]
+const items = [
+  { href: routes.home, label: 'Inicio', icon: Home },
+  { href: routes.ranking, label: 'Ranking', icon: Trophy },
+  { href: routes.prizes, label: 'Premios', icon: Medal },
+  { href: routes.challenges, label: 'Desafíos', icon: Swords },
+] as const
 
-export function ConsoleNav({
-  view,
-  setView,
-}: {
-  view: View
-  setView: (v: View) => void
-}) {
+export function ConsoleNav() {
+  const pathname = usePathname()
   const { signOut } = useUser()
 
   return (
     <>
       {/* Desktop rail */}
       <nav className="fixed left-0 top-0 z-40 hidden h-screen w-20 flex-col items-center justify-between border-r border-border glass py-6 lg:flex">
-        <button
-          onClick={() => setView('home')}
+        <Link
+          href={routes.home}
           className="grid size-14 place-items-center transition-transform hover:scale-105"
-          aria-label="Inicio PierdePaga"
+          aria-label="Inicio"
         >
           <BrandLogo size="xl" variant="compact" />
-        </button>
+        </Link>
 
         <div className="flex flex-col items-center gap-2">
           {items.map((item) => {
-            const active = view === item.id
+            const active = isNavActive(pathname, item.href)
             return (
-              <button
-                key={item.id}
-                onClick={() => setView(item.id)}
+              <Link
+                key={item.href}
+                href={item.href}
                 className={cn(
                   'group relative grid size-12 place-items-center rounded-xl transition-colors',
                   active
@@ -76,7 +73,7 @@ export function ConsoleNav({
                 <span className="pointer-events-none absolute left-16 z-50 whitespace-nowrap rounded-md border border-border bg-popover px-2.5 py-1 text-xs font-medium opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
                   {item.label}
                 </span>
-              </button>
+              </Link>
             )
           })}
         </div>
@@ -99,11 +96,11 @@ export function ConsoleNav({
           <BackdropBlur edge="bottom" />
           <div className="relative z-1 flex items-center justify-around px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
             {items.map((item) => {
-              const active = view === item.id
+              const active = isNavActive(pathname, item.href)
               return (
-                <button
-                  key={item.id}
-                  onClick={() => setView(item.id)}
+                <Link
+                  key={item.href}
+                  href={item.href}
                   className={cn(
                     'flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-[10px] font-medium uppercase tracking-wide transition-colors',
                     active ? 'text-primary' : 'text-muted-foreground',
@@ -112,7 +109,7 @@ export function ConsoleNav({
                 >
                   <item.icon className="size-5" />
                   {item.label}
-                </button>
+                </Link>
               )
             })}
           </div>
@@ -122,23 +119,18 @@ export function ConsoleNav({
   )
 }
 
-function TopBarContent({
-  onProfile,
-  isProfile,
-}: {
-  onProfile?: () => void
-  isProfile?: boolean
-}) {
-  const { player } = useUser()
+function TopBarContent() {
+  const pathname = usePathname()
+  const { player, signOut } = useUser()
+  const isProfile = isProfileActive(pathname)
 
   return (
     <div className="relative z-1 flex items-center justify-between gap-4 px-4 py-3 lg:px-8">
       <RegionSelectors />
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        <button
-          type="button"
-          onClick={onProfile}
+        <Link
+          href={routes.profile}
           className={cn(
             'flex items-center gap-2 rounded-lg border py-1 pl-1 pr-3 transition-colors',
             isProfile
@@ -160,19 +152,21 @@ function TopBarContent({
           <span className="hidden text-xs font-semibold sm:inline">
             {playerPublicName(player)}
           </span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => signOut()}
+          className="grid size-9 place-items-center rounded-lg border border-border bg-secondary/60 text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+          aria-label="Cerrar sesión"
+        >
+          <LogOut className="size-4" />
         </button>
       </div>
     </div>
   )
 }
 
-export function TopBar({
-  onProfile,
-  isProfile,
-}: {
-  onProfile?: () => void
-  isProfile?: boolean
-}) {
+export function TopBar() {
   const isLg = useIsLg()
   const usePortal = isLg === false
 
@@ -186,7 +180,7 @@ export function TopBar({
       )}
     >
       <BackdropBlur edge="top" />
-      <TopBarContent onProfile={onProfile} isProfile={isProfile} />
+      <TopBarContent />
     </header>
   )
 

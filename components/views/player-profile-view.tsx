@@ -1,17 +1,22 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { getPublicPlayerProfile } from '@/lib/data'
+import { routes } from '@/lib/routes'
 import { PlayerProfileContent } from '@/components/profile/player-profile-content'
 import { useRegion } from '@/components/region-provider'
 
 export function PlayerProfileView({
   playerId,
-  onBack,
 }: {
   playerId: string
-  onBack: () => void
 }) {
+  const router = useRouter()
   const { rankingTitle } = useRegion()
+
+  function handleBack() {
+    router.push(routes.ranking)
+  }
   const data = getPublicPlayerProfile(playerId)
 
   if (!data) {
@@ -22,7 +27,7 @@ export function PlayerProfileView({
         </p>
         <button
           type="button"
-          onClick={onBack}
+          onClick={handleBack}
           className="mt-4 text-sm font-semibold text-primary hover:text-primary/80"
         >
           Volver al ranking
@@ -40,7 +45,7 @@ export function PlayerProfileView({
       regionLabel={data.regionLabel}
       rankingTitle={rankingTitle}
       readOnly
-      onBack={onBack}
+      onBack={handleBack}
     />
   )
 }

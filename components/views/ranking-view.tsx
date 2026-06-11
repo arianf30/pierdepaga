@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
@@ -12,7 +14,8 @@ import {
   Swords,
   TrendingUp,
 } from 'lucide-react'
-import { leaderboard, RANKING_PAGE_SIZE, type Player, type View } from '@/lib/data'
+import { leaderboard, RANKING_PAGE_SIZE, type Player } from '@/lib/data'
+import { playerProfilePath, routes } from '@/lib/routes'
 import { playerMatchesSearch, playerPublicName } from '@/lib/player-names'
 import { fadeUp } from '@/components/ui-kit'
 import { cn } from '@/lib/utils'
@@ -330,14 +333,13 @@ function RankingRow({
   )
 }
 
-export function RankingView({
-  setView,
-  onViewPlayer,
-}: {
-  setView: (v: View) => void
-  onViewPlayer: (playerId: string) => void
-}) {
+export function RankingView() {
+  const router = useRouter()
   const { player } = useUser()
+
+  function handleViewPlayer(playerId: string) {
+    router.push(playerProfilePath(playerId))
+  }
   const { rankingTitle } = useRegion()
   const [page, setPage] = useState(0)
   const [query, setQuery] = useState('')
@@ -481,7 +483,7 @@ export function RankingView({
                       player={p}
                       isMe={isMe}
                       rowIndex={i}
-                      onViewPlayer={onViewPlayer}
+                      onViewPlayer={handleViewPlayer}
                     />
                   )
                 })
@@ -542,13 +544,14 @@ export function RankingView({
         </div>
 
         <div className="mt-6 flex justify-center">
-          <motion.button
-            {...fadeUp(2)}
-            onClick={() => setView('challenges')}
-            className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-5 py-3 font-display text-sm font-bold text-primary transition-colors hover:bg-primary/20"
-          >
-            <Swords className="size-4" /> Desafiar a un rival
-          </motion.button>
+          <Link href={routes.challenges}>
+            <motion.span
+              {...fadeUp(2)}
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-5 py-3 font-display text-sm font-bold text-primary transition-colors hover:bg-primary/20"
+            >
+              <Swords className="size-4" /> Desafiar a un rival
+            </motion.span>
+          </Link>
         </div>
       </motion.section>
     </div>
