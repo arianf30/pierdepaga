@@ -10,15 +10,23 @@ import {
   Gift,
   History,
   Medal,
+  Minus,
+  Search,
   Shield,
   Swords,
+  TrendingUp,
   Trophy,
   Zap,
 } from 'lucide-react'
+import { StreakBadge } from '@/components/arena/streak-badge'
 import { Atmosphere } from '@/components/atmosphere'
 import { BrandLogo } from '@/components/brand-logo'
 import { AccentButton, fadeUp, PrimaryButton } from '@/components/ui-kit'
+import { leaderboard } from '@/lib/data'
+import { playerPublicName } from '@/lib/player-names'
 import { routes } from '@/lib/routes'
+import { formatSkill, playerSkill } from '@/lib/skill'
+import { formatStreakValue } from '@/lib/streaks'
 import { cn } from '@/lib/utils'
 
 const STATS = [
@@ -75,33 +83,148 @@ const STEPS = [
   },
 ] as const
 
-const LIVE_MATCHES = [
-  {
-    names: 'Sofi & Diego',
-    vs: 'Vale & Lu',
-    score: '6-4 · 3-2',
-    stake: '$10.000',
-    accent: true,
-    live: true,
-  },
-  {
-    names: 'Tomás & Nico',
-    vs: 'Elena & Hugo',
-    score: '7-6 · 4-4',
-    stake: null,
-    accent: false,
-    live: true,
-  },
-] as const
+const HERO_RANKING = leaderboard.slice(0, 5)
+
+/** Rachas de demo: 2 fuegos distintos + 1 hielito */
+const HERO_STREAKS: Record<string, number> = {
+  p2: 3, // fuego suave
+  p3: 8, // fuego intenso (rayo)
+  p4: -7, // hielito fuerte
+  p9: -1, // Vale
+  p5: 1, // Tomás
+}
+
+function heroStreak(playerId: string, fallback: number) {
+  return HERO_STREAKS[playerId] ?? fallback
+}
+
+function RankDeltaMini({ delta }: { delta: number }) {
+  if (delta > 0) {
+    return <TrendingUp className="size-2.5 shrink-0 text-primary" aria-hidden />
+  }
+  if (delta < 0) {
+    return (
+      <TrendingUp
+        className="size-2.5 shrink-0 rotate-180 text-destructive"
+        aria-hidden
+      />
+    )
+  }
+  return <Minus className="size-2.5 shrink-0 text-muted-foreground/50" aria-hidden />
+}
+
+function HeroRankingPreview() {
+  return (
+    <div className="rounded-3xl border border-border glass p-4 shadow-[0_0_60px_oklch(0.78_0.14_195/0.12)] sm:p-5">
+      <div className="mb-3 flex items-center gap-2 border-b border-border/50 pb-3">
+        <div className="flex gap-1.5">
+          <span className="size-2 rounded-full bg-destructive/70" />
+          <span className="size-2 rounded-full bg-accent/70" />
+          <span className="size-2 rounded-full bg-primary/70" />
+        </div>
+        <span className="mx-auto truncate text-[10px] text-muted-foreground">
+          pierdepaga.app/ranking
+        </span>
+      </div>
+
+      <p className="text-sm font-semibold tracking-tight">Ranking Formosa</p>
+
+      <div className="relative mt-2.5">
+        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3 -translate-y-1/2 text-muted-foreground" />
+        <div className="rounded-lg border border-border bg-secondary/30 px-7 py-2 text-[10px] text-muted-foreground">
+          Buscar jugador...
+        </div>
+      </div>
+
+      <div className="mt-3 overflow-hidden rounded-xl border border-border bg-card/50">
+        <div className="grid grid-cols-[2.25rem_minmax(0,1fr)_2.5rem_3.25rem] items-center gap-2 border-b border-border/50 bg-secondary/20 px-3 py-2">
+          <span className="type-label text-[8px]">#</span>
+          <span className="type-label text-[8px]">Jugador</span>
+          <span className="type-label text-center text-[8px]">Racha</span>
+          <span className="type-label text-right text-[8px]">Hab.</span>
+        </div>
+        <div className="divide-y divide-border/40">
+          {HERO_RANKING.map((player, index) => {
+            const streak = heroStreak(player.id, player.streak)
+
+            return (
+            <div
+              key={player.id}
+              className={cn(
+                'grid grid-cols-[2.25rem_minmax(0,1fr)_2.5rem_3.25rem] items-center gap-2 px-3 py-2',
+                index % 2 === 0 ? 'bg-white/[0.02]' : 'bg-transparent',
+              )}
+            >
+              <div className="flex items-center justify-center gap-0.5">
+                <span
+                  className={cn(
+                    'font-display text-[11px] font-extrabold tabular-nums',
+                    player.rank === 1 && 'text-accent',
+                    player.rank === 2 && 'text-foreground/90',
+                    player.rank === 3 && 'text-orange-400/90',
+                    player.rank > 3 && 'text-muted-foreground',
+                  )}
+                >
+                  {player.rank}
+                </span>
+                <RankDeltaMini delta={player.rankDelta} />
+              </div>
+              <div className="flex min-w-0 items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={player.avatar}
+                  alt=""
+                  className={cn(
+                    'size-6 shrink-0 rounded-md object-cover ring-1 ring-border',
+                    player.rank <= 3 && 'ring-accent/30',
+                  )}
+                />
+                <span className="flex min-w-0 items-center gap-1">
+                  <span className="truncate text-[11px] font-semibold">
+                    {playerPublicName(player)}
+                  </span>
+                  {HERO_STREAKS[player.id] !== undefined && (
+                    <StreakBadge
+                      streak={streak}
+                      className="origin-left scale-[0.52] shrink-0"
+                    />
+                  )}
+                </span>
+              </div>
+              <span
+                className={cn(
+                  'text-center font-display text-[11px] font-bold tabular-nums',
+                  streak > 0 && 'text-accent',
+                  streak < 0 && 'text-destructive',
+                  streak === 0 && 'text-muted-foreground/70',
+                )}
+              >
+                {formatStreakValue(streak)}
+              </span>
+              <span className="text-right font-display text-[11px] font-bold tabular-nums text-primary">
+                {formatSkill(playerSkill(player))}
+              </span>
+            </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function LandingNav() {
   return (
     <header className="relative z-20 border-b border-border/50 bg-background/60 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
-        <Link href={routes.landing} aria-label="PierdePaga">
+      <div className="relative mx-auto flex w-full max-w-6xl items-center px-5 py-4 sm:px-8">
+        <Link
+          href={routes.landing}
+          aria-label="PierdePaga"
+          className="relative z-10 flex shrink-0 items-center"
+        >
           <BrandLogo size="md" />
         </Link>
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
           <a
             href="#modos"
             className="text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
@@ -121,7 +244,7 @@ function LandingNav() {
             Premios
           </a>
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="relative z-10 ml-auto flex shrink-0 items-center gap-2">
           <Link
             href={routes.login}
             className="hidden rounded-xl border border-border px-4 py-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground sm:inline-flex"
@@ -251,11 +374,11 @@ export function LandingPage() {
             <div className="mb-5 flex flex-wrap gap-2">
               <span className="type-badge inline-flex items-center gap-2 rounded-full border border-accent/35 bg-accent/10 px-3 py-1 text-accent">
                 <Gift className="size-3.5" />
-                100% gratis · Competí por premios
+                100% gratis
               </span>
               <span className="type-badge inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-primary">
-                <Flame className="size-3.5" />
-                Pádel competitivo · Ranking por provincia
+                <Trophy className="size-3.5" />
+                Ranking
               </span>
             </div>
             <h1 className="max-w-xl text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
@@ -289,51 +412,7 @@ export function LandingPage() {
             {...fadeUp(1)}
             className="relative mx-auto w-full max-w-md lg:max-w-none"
           >
-            <div className="rounded-3xl border border-border glass p-5 shadow-[0_0_60px_oklch(0.78_0.14_195/0.12)]">
-              <div className="mb-4 flex items-center justify-between">
-                <p className="type-kicker">Partidos en curso</p>
-                <LiveBadge />
-              </div>
-              <div className="space-y-3">
-                {LIVE_MATCHES.map((match) => (
-                  <div
-                    key={match.names}
-                    className={cn(
-                      'rounded-2xl border px-4 py-3.5',
-                      match.accent
-                        ? 'border-accent/25 bg-accent/[0.05]'
-                        : 'border-border bg-secondary/30',
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0 flex-1 text-xs font-semibold">
-                        <span>{match.names}</span>
-                        <span className="mx-1 text-muted-foreground/50">vs</span>
-                        <span>{match.vs}</span>
-                      </div>
-                      {match.live && (
-                        <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-primary">
-                          LIVE
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="font-display text-sm font-bold tabular-nums text-primary">
-                        {match.score}
-                      </span>
-                      {match.stake && (
-                        <span className="text-xs font-bold text-accent text-glow-gold">
-                          {match.stake}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-4 text-center text-[11px] text-muted-foreground">
-                Marcadores en vivo de partidos en canchas de tu provincia
-              </p>
-            </div>
+            <HeroRankingPreview />
           </motion.div>
         </div>
       </section>

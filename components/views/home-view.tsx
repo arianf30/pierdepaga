@@ -36,9 +36,9 @@ export function HomeView() {
   const [pierdePagaOpen, setPierdePagaOpen] = useState(false)
   const { player } = useUser()
   const { rankingTitle } = useRegion()
-  const winRate = Math.round(
-    (player.wins / (player.wins + player.losses)) * 100,
-  )
+  const totalMatches = player.wins + player.losses
+  const winRate =
+    totalMatches > 0 ? Math.round((player.wins / totalMatches) * 100) : 0
 
   const recentFeed = useMemo(
     () => buildArenaFeed(playedDoublesMatches).slice(0, 6),

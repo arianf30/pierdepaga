@@ -94,7 +94,8 @@ export function PlayerProfileContent({
   const [showAllMatches, setShowAllMatches] = useState(false)
 
   const totalMatches = player.wins + player.losses
-  const winRate = Math.round((player.wins / totalMatches) * 100)
+  const winRate =
+    totalMatches > 0 ? Math.round((player.wins / totalMatches) * 100) : 0
   const visibleMatches = showAllMatches
     ? matchHistory
     : matchHistory.slice(0, PROFILE_MATCH_PREVIEW)

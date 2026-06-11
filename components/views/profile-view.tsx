@@ -9,28 +9,33 @@ import { useRegion } from '@/components/region-provider'
 import { availableCountryById, isCountryId } from '@/lib/catalog'
 
 export function ProfileView() {
-  const { player, profile, updateProfile } = useUser()
-  const { country, province, setCountry, setProvince, rankingTitle } =
-    useRegion()
+  const { player, profile, updateProfile, country, province } = useUser()
+  const { rankingTitle, hydrateRegion } = useRegion()
   const [editing, setEditing] = useState(false)
 
   const countryName = availableCountryById(country).name
   const regionLabel = `${countryName} · ${province}`
 
-  function handleSave({
+  async function handleSave({
     profile: nextProfile,
     country: nextCountry,
     province: nextProvince,
+    avatarFile,
   }: {
     profile: typeof profile
     country: string
     province: string
+    avatarFile?: File | null
   }) {
-    const err = updateProfile(nextProfile)
+    const err = await updateProfile({
+      profile: nextProfile,
+      country: nextCountry,
+      province: nextProvince,
+      avatarFile,
+    })
     if (err) return err
     if (!isCountryId(nextCountry)) return 'País no disponible.'
-    setCountry(nextCountry)
-    setProvince(nextProvince)
+    hydrateRegion(nextCountry, nextProvince)
     return null
   }
 

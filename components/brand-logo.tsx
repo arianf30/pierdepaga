@@ -1,126 +1,53 @@
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 type BrandLogoProps = {
-  size?: 'sm' | 'md' | 'lg' | 'xl'
-  /** full: wordmark · compact: monograma P$P */
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'rail'
+  /** Conservado por compatibilidad; siempre usa pierdepaga-logo.png */
   variant?: 'full' | 'wordmark' | 'compact' | 'mark'
   onLight?: boolean
   className?: string
 }
 
-const sizeConfig = {
-  sm: {
-    text: 'text-base',
-    gap: 'gap-[0.3em]',
-    monogram: 'text-base',
-    symbol: 'text-sm',
-  },
-  md: {
-    text: 'text-xl',
-    gap: 'gap-[0.32em]',
-    monogram: 'text-xl',
-    symbol: 'text-base',
-  },
-  lg: {
-    text: 'text-[2rem] sm:text-[2.5rem]',
-    gap: 'gap-[0.35em]',
-    monogram: 'text-2xl',
-    symbol: 'text-xl',
-  },
-  xl: {
-    text: 'text-[2.5rem]',
-    gap: 'gap-[0.35em]',
-    monogram: 'text-[1.75rem]',
-    symbol: 'text-2xl',
-  },
+const LOGO = {
+  src: '/brand/pierdepaga-logo.png',
+  width: 943,
+  height: 408,
 } as const
 
-function LogoSymbol({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        'mx-[0.1em] inline-block font-normal not-italic leading-none text-muted-foreground opacity-50',
-        className,
-      )}
-      aria-hidden
-    >
-      $
-    </span>
-  )
-}
-
-function VelocityWordmark({
-  size,
-  onLight,
-  className,
-}: {
-  size: keyof typeof sizeConfig
-  onLight?: boolean
-  className?: string
-}) {
-  const cfg = sizeConfig[size]
-  const pierde = onLight ? 'text-black' : 'text-foreground'
-
-  return (
-    <span
-      className={cn('inline-flex flex-col font-logo', cfg.gap, className)}
-      aria-label="PierdePaga"
-    >
-      <span
-        className={cn(
-          'inline-flex items-baseline font-bold italic uppercase tracking-tight',
-          cfg.text,
-          pierde,
-        )}
-      >
-        <span>Pierde</span>
-        <LogoSymbol className={cfg.symbol} />
-        <span className="text-primary">Paga</span>
-      </span>
-    </span>
-  )
-}
-
-function VelocityMonogram({
-  size,
-  className,
-}: {
-  size: keyof typeof sizeConfig
-  className?: string
-}) {
-  const cfg = sizeConfig[size]
-
-  return (
-    <span
-      className={cn(
-        'inline-flex items-baseline font-logo font-bold italic uppercase leading-none tracking-tight text-foreground',
-        cfg.monogram,
-        className,
-      )}
-      aria-label="PierdePaga"
-    >
-      P
-      <LogoSymbol className={cfg.symbol} />
-      <span className="text-primary">P</span>
-    </span>
-  )
-}
+const sizeConfig = {
+  rail: 24,
+  sm: 22,
+  md: 32,
+  lg: 48,
+  xl: 36,
+} as const
 
 export function BrandLogo({
   size = 'md',
-  variant = 'full',
-  onLight = false,
   className,
 }: BrandLogoProps) {
-  if (variant === 'compact' || variant === 'mark') {
-    return <VelocityMonogram size={size} className={className} />
-  }
+  const height = sizeConfig[size]
+  const width = Math.round((height * LOGO.width) / LOGO.height)
 
   return (
-    <VelocityWordmark
-      size={size}
-      onLight={onLight}
-      className={className}
-    />
+    <span
+      className={cn(
+        'inline-flex shrink-0 select-none items-center justify-start leading-none',
+        className,
+      )}
+      style={{ height, width }}
+      aria-label="PierdePaga"
+    >
+      <Image
+        src={LOGO.src}
+        alt=""
+        width={width}
+        height={height}
+        unoptimized
+        priority={size === 'lg' || size === 'rail'}
+        className="block size-full object-contain object-left"
+      />
+    </span>
   )
 }

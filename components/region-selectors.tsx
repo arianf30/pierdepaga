@@ -22,20 +22,6 @@ export function RegionSelectors({ className }: { className?: string }) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <SelectShell
-        label="Deporte"
-        className="min-w-[6.5rem]"
-        value={sport}
-        onChange={(v) => setSport(v as SportId)}
-        options={AVAILABLE_SPORTS.map((item) => ({
-          value: item.id,
-          label: item.label.toUpperCase(),
-        }))}
-      >
-        <span className={cn(selectValueClass, 'min-w-0 truncate')}>
-          {sportLabel(sport).toUpperCase()}
-        </span>
-      </SelectShell>
-      <SelectShell
         label="País"
         flagOnly
         className="size-11 shrink-0"
@@ -63,6 +49,21 @@ export function RegionSelectors({ className }: { className?: string }) {
       >
         <span className={cn(selectValueClass, 'min-w-0 truncate')}>
           {province.toUpperCase()}
+        </span>
+      </SelectShell>
+
+      <SelectShell
+        label="Deporte"
+        className="min-w-[6.5rem]"
+        value={sport}
+        onChange={(v) => setSport(v as SportId)}
+        options={AVAILABLE_SPORTS.map((item) => ({
+          value: item.id,
+          label: item.label.toUpperCase(),
+        }))}
+      >
+        <span className={cn(selectValueClass, 'min-w-0 truncate')}>
+          {sportLabel(sport).toUpperCase()}
         </span>
       </SelectShell>
     </div>

@@ -24,7 +24,8 @@ type ProfileEditSheetProps = {
     profile: PlayerProfileData
     country: string
     province: string
-  }) => string | null
+    avatarFile?: File | null
+  }) => Promise<string | null> | string | null
 }
 
 const inputClass =
@@ -44,6 +45,8 @@ export function ProfileEditSheet({
   const [draftCountry, setDraftCountry] = useState(country)
   const [draftProvince, setDraftProvince] = useState(province)
   const [error, setError] = useState<string | null>(null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [saving, setSaving] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -52,6 +55,8 @@ export function ProfileEditSheet({
     setDraftCountry(country)
     setDraftProvince(province)
     setError(null)
+    setAvatarFile(null)
+    setSaving(false)
   }, [open, profile, country, province])
 
   if (!open) return null
@@ -68,29 +73,37 @@ export function ProfileEditSheet({
 
   function handlePhotoChange(file: File | undefined) {
     if (!file) return
+    setAvatarFile(file)
     const url = URL.createObjectURL(file)
     setDraft((prev) => ({ ...prev, avatar: url }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const err = onSave({
-      profile: {
-        ...draft,
-        firstName: draft.firstName.trim(),
-        lastName: draft.lastName.trim(),
-        displayName: draft.displayName.trim(),
-        instagram: draft.instagram?.trim() || undefined,
-        dni: draft.dni.trim(),
-      },
-      country: draftCountry,
-      province: draftProvince,
-    })
-    if (err) {
-      setError(err)
-      return
+    setSaving(true)
+    setError(null)
+    try {
+      const err = await onSave({
+        profile: {
+          ...draft,
+          firstName: draft.firstName.trim(),
+          lastName: draft.lastName.trim(),
+          displayName: draft.displayName.trim(),
+          instagram: draft.instagram?.trim() || undefined,
+          dni: draft.dni.trim(),
+        },
+        country: draftCountry,
+        province: draftProvince,
+        avatarFile,
+      })
+      if (err) {
+        setError(err)
+        return
+      }
+      onClose()
+    } finally {
+      setSaving(false)
     }
-    onClose()
   }
 
   return (
@@ -285,8 +298,8 @@ export function ProfileEditSheet({
           <GhostButton type="button" className="flex-1" onClick={onClose}>
             Cancelar
           </GhostButton>
-          <PrimaryButton type="submit" className="flex-1">
-            Guardar cambios
+          <PrimaryButton type="submit" className="flex-1" disabled={saving}>
+            {saving ? 'Guardando…' : 'Guardar cambios'}
           </PrimaryButton>
         </div>
       </form>

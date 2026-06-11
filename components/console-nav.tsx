@@ -23,27 +23,33 @@ import { BrandLogo } from '@/components/brand-logo'
 import { playerPublicName } from '@/lib/player-names'
 import { RegionSelectors } from '@/components/region-selectors'
 
-const items = [
+const playerItems = [
   { href: routes.home, label: 'Inicio', icon: Home },
   { href: routes.ranking, label: 'Ranking', icon: Trophy },
   { href: routes.prizes, label: 'Premios', icon: Medal },
   { href: routes.challenges, label: 'Desafíos', icon: Swords },
 ] as const
 
+const sponsorItems = [
+  { href: routes.prizes, label: 'Premios', icon: Medal },
+] as const
+
 export function ConsoleNav() {
   const pathname = usePathname()
-  const { signOut } = useUser()
+  const { signOut, isSponsor } = useUser()
+  const items = isSponsor ? sponsorItems : playerItems
+  const homeHref = isSponsor ? routes.prizes : routes.home
 
   return (
     <>
       {/* Desktop rail */}
-      <nav className="fixed left-0 top-0 z-40 hidden h-screen w-20 flex-col items-center justify-between border-r border-border glass py-6 lg:flex">
+      <nav className="fixed left-0 top-0 z-40 hidden h-screen w-20 flex-col items-stretch justify-between border-r border-border glass py-6 lg:flex">
         <Link
-          href={routes.home}
-          className="grid size-14 place-items-center transition-transform hover:scale-105"
-          aria-label="Inicio"
+          href={homeHref}
+          className="flex h-14 w-full items-center justify-start px-2.5 transition-transform hover:scale-[1.02]"
+          aria-label={isSponsor ? 'Premios' : 'Inicio'}
         >
-          <BrandLogo size="xl" variant="compact" />
+          <BrandLogo size="rail" />
         </Link>
 
         <div className="flex flex-col items-center gap-2">
@@ -90,7 +96,7 @@ export function ConsoleNav() {
         </div>
       </nav>
 
-      {/* Mobile bottom bar — portal al body para que backdrop-filter funcione */}
+      {/* Mobile bottom bar */}
       <MobilePortal enabled>
         <nav className="fixed inset-x-0 bottom-0 z-40 lg:hidden">
           <BackdropBlur edge="bottom" />
@@ -121,14 +127,19 @@ export function ConsoleNav() {
 
 function TopBarContent() {
   const pathname = usePathname()
-  const { player, signOut } = useUser()
+  const { player, signOut, isSponsor } = useUser()
   const isProfile = isProfileActive(pathname)
 
   return (
     <div className="relative z-1 flex items-center justify-between gap-4 px-4 py-3 lg:px-8">
-      <RegionSelectors />
+      {!isSponsor ? <RegionSelectors /> : <div className="min-w-0 flex-1" />}
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        {isSponsor && (
+          <span className="type-badge hidden rounded-full border border-accent/35 bg-accent/10 px-3 py-1 text-accent sm:inline-flex">
+            Sponsor
+          </span>
+        )}
         <Link
           href={routes.profile}
           className={cn(

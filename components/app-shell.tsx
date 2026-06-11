@@ -2,6 +2,7 @@
 
 import { Atmosphere } from '@/components/atmosphere'
 import { ConsoleNav, TopBar } from '@/components/console-nav'
+import { RegionSync } from '@/components/region-sync'
 import { RegionProvider } from '@/components/region-provider'
 import { SportProvider } from '@/components/sport-provider'
 import { UserProvider } from '@/components/auth/user-provider'
@@ -13,6 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <UserProvider>
           <div className="relative min-h-screen">
             <Atmosphere />
+            <RegionSync />
             <ConsoleNav />
             <TopBar />
             <div className="relative lg:pl-20">

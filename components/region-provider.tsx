@@ -19,6 +19,7 @@ type RegionContextValue = {
   province: string
   setCountry: (country: CountryId) => void
   setProvince: (province: string) => void
+  hydrateRegion: (country: CountryId, province: string) => void
   rankingTitle: string
   rankingKicker: string
 }
@@ -42,6 +43,16 @@ export function RegionProvider({ children }: { children: ReactNode }) {
     setProvince(next)
   }
 
+  function hydrateRegion(nextCountry: CountryId, nextProvince: string) {
+    setCountryState(nextCountry)
+    const provinces = availableProvincesFor(nextCountry)
+    setProvince(
+      provinces.includes(nextProvince)
+        ? nextProvince
+        : defaultProvinceFor(nextCountry),
+    )
+  }
+
   const rankingTitle = rankingLabel(province)
   const rankingKicker = rankingTitle
 
@@ -52,6 +63,7 @@ export function RegionProvider({ children }: { children: ReactNode }) {
         province,
         setCountry,
         setProvince: setProvinceSafe,
+        hydrateRegion,
         rankingTitle,
         rankingKicker,
       }}
