@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -22,6 +23,7 @@ import {
 import { BrandLogo } from '@/components/brand-logo'
 import { playerPublicName } from '@/lib/player-names'
 import { RegionSelectors } from '@/components/region-selectors'
+import { ProfileEditSheet } from '@/components/profile/profile-edit-sheet'
 
 const playerItems = [
   { href: routes.home, label: 'Inicio', icon: Home },
@@ -127,53 +129,111 @@ export function ConsoleNav() {
 
 function TopBarContent() {
   const pathname = usePathname()
-  const { player, signOut, isSponsor } = useUser()
+  const {
+    player,
+    profile,
+    country,
+    province,
+    signOut,
+    isSponsor,
+    updateProfile,
+  } = useUser()
   const isProfile = isProfileActive(pathname)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [saveBanner, setSaveBanner] = useState<string | null>(null)
+
+  const profileButtonClass = cn(
+    'flex items-center gap-2 rounded-lg border py-1 pl-1 pr-3 transition-colors',
+    isProfile && !isSponsor
+      ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/25'
+      : profileOpen
+        ? 'border-accent/40 bg-accent/10 ring-1 ring-accent/25'
+        : 'border-border bg-secondary/60 hover:border-primary/30 hover:bg-secondary/80',
+  )
+
+  const profileButtonContent = (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={player.avatar}
+        alt=""
+        className="size-7 rounded-md object-cover"
+      />
+      <span className="font-display text-xs font-bold uppercase tracking-wide text-foreground sm:hidden">
+        {getInitials(playerPublicName(player))}
+      </span>
+      <span className="hidden text-xs font-semibold sm:inline">
+        {playerPublicName(player)}
+      </span>
+    </>
+  )
 
   return (
-    <div className="relative z-1 flex items-center justify-between gap-4 px-4 py-3 lg:px-8">
-      {!isSponsor ? <RegionSelectors /> : <div className="min-w-0 flex-1" />}
+    <>
+      <div className="relative z-1 flex items-center justify-between gap-4 px-4 py-3 lg:px-8">
+        <RegionSelectors />
 
-      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        {isSponsor && (
-          <span className="type-badge hidden rounded-full border border-accent/35 bg-accent/10 px-3 py-1 text-accent sm:inline-flex">
-            Sponsor
-          </span>
-        )}
-        <Link
-          href={routes.profile}
-          className={cn(
-            'flex items-center gap-2 rounded-lg border py-1 pl-1 pr-3 transition-colors',
-            isProfile
-              ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/25'
-              : 'border-border bg-secondary/60 hover:border-primary/30 hover:bg-secondary/80',
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {isSponsor && (
+            <span className="type-badge hidden rounded-full border border-accent/35 bg-accent/10 px-3 py-1 text-accent sm:inline-flex">
+              Sponsor
+            </span>
           )}
-          aria-label="Ir al perfil"
-          aria-current={isProfile ? 'page' : undefined}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={player.avatar}
-            alt=""
-            className="size-7 rounded-md object-cover"
-          />
-          <span className="font-display text-xs font-bold uppercase tracking-wide text-foreground sm:hidden">
-            {getInitials(playerPublicName(player))}
-          </span>
-          <span className="hidden text-xs font-semibold sm:inline">
-            {playerPublicName(player)}
-          </span>
-        </Link>
-        <button
-          type="button"
-          onClick={() => signOut()}
-          className="grid size-9 place-items-center rounded-lg border border-border bg-secondary/60 text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
-          aria-label="Cerrar sesión"
-        >
-          <LogOut className="size-4" />
-        </button>
+          {isSponsor ? (
+            <button
+              type="button"
+              onClick={() => setProfileOpen(true)}
+              className={profileButtonClass}
+              aria-label="Editar perfil del anunciante"
+            >
+              {profileButtonContent}
+            </button>
+          ) : (
+            <Link
+              href={routes.profile}
+              className={profileButtonClass}
+              aria-label="Ir al perfil"
+              aria-current={isProfile ? 'page' : undefined}
+            >
+              {profileButtonContent}
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => signOut()}
+            className="grid size-9 place-items-center rounded-lg border border-border bg-secondary/60 text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+            aria-label="Cerrar sesión"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </div>
       </div>
-    </div>
+
+      {saveBanner && (
+        <p className="relative z-1 border-t border-primary/20 bg-primary/10 px-4 py-2 text-center text-xs text-primary lg:px-8">
+          {saveBanner}
+        </p>
+      )}
+
+      {isSponsor && (
+        <ProfileEditSheet
+          open={profileOpen}
+          mode="sponsor"
+          profile={profile}
+          country={country}
+          province={province}
+          onClose={() => setProfileOpen(false)}
+          onSave={async (input) => {
+            const err = await updateProfile(input)
+            if (!err) {
+              setSaveBanner('Perfil actualizado.')
+              setTimeout(() => setSaveBanner(null), 3000)
+            }
+            return err
+          }}
+        />
+      )}
+    </>
   )
 }
 

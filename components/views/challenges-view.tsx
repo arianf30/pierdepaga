@@ -2,32 +2,37 @@
 
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CirclePlus, Swords } from 'lucide-react'
+import { CirclePlus, Calculator, Swords } from 'lucide-react'
 import {
   AccentButton,
+  GhostButton,
   PrimaryButton,
   SectionTitle,
   fadeUp,
 } from '@/components/ui-kit'
 import { useUser } from '@/components/auth/user-provider'
 import { LoadMatchModal } from '@/components/challenges/load-match-modal'
+import { SkillPointsCalculatorModal } from '@/components/challenges/skill-points-calculator-modal'
 import { PierdePagaChallengeModal } from '@/components/challenges/pierde-paga-challenge-modal'
 import { PendingPierdePagaCard } from '@/components/challenges/pending-pierde-paga-card'
 import { PendingSimpleMatchCard } from '@/components/challenges/pending-simple-match-card'
+import { usePendingMatches } from '@/hooks/use-pending-matches'
+import { useRanking } from '@/hooks/use-ranking'
 import { getPlayerById, searchChallengeOpponents } from '@/lib/data'
 import {
   pendingPierdePagaChallenges,
-  pendingSimpleMatches,
   pierdePagaTeamAverage,
   type PendingPierdePagaChallenge,
-  type PendingSimpleMatch,
 } from '@/lib/pending-activities'
 
 export function ChallengesView() {
   const { player } = useUser()
+  const { matches: simpleMatches, loading, refresh } = usePendingMatches()
+  const { refresh: refreshRanking } = useRanking()
   const [loadMatchOpen, setLoadMatchOpen] = useState(false)
+  const [calculatorOpen, setCalculatorOpen] = useState(false)
   const [pierdePagaOpen, setPierdePagaOpen] = useState(false)
-  const [simpleMatches, setSimpleMatches] = useState(pendingSimpleMatches)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [challenges, setChallenges] = useState(pendingPierdePagaChallenges)
 
   const sortedSimpleMatches = useMemo(
@@ -40,22 +45,42 @@ export function ChallengesView() {
     [challenges],
   )
 
-  function handleConfirmSimpleMatch(id: string) {
-    setSimpleMatches((prev) =>
-      prev.map((match) => {
-        if (match.id !== id) return match
-        return {
-          ...match,
-          confirmations: match.confirmations.map((c) =>
-            c.playerId === player.id ? { ...c, confirmed: true } : c,
-          ),
-        }
-      }),
-    )
+  async function handleConfirmSimpleMatch(id: string) {
+    setActionError(null)
+    try {
+      const response = await fetch(`/api/matches/${id}/confirm`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const body = (await response.json()) as { error?: string }
+      if (!response.ok) {
+        throw new Error(body.error ?? 'No se pudo confirmar el partido')
+      }
+      await Promise.all([refresh(), refreshRanking()])
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : 'No se pudo confirmar el partido',
+      )
+    }
   }
 
-  function handleCancelSimpleMatch(id: string) {
-    setSimpleMatches((prev) => prev.filter((match) => match.id !== id))
+  async function handleCancelSimpleMatch(id: string) {
+    setActionError(null)
+    try {
+      const response = await fetch(`/api/matches/${id}/cancel`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const body = (await response.json()) as { error?: string }
+      if (!response.ok) {
+        throw new Error(body.error ?? 'No se pudo cancelar el partido')
+      }
+      await refresh()
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : 'No se pudo cancelar el partido',
+      )
+    }
   }
 
   function handleConfirmChallengePartner(id: string) {
@@ -104,6 +129,11 @@ export function ChallengesView() {
     setChallenges((prev) => prev.filter((challenge) => challenge.id !== id))
   }
 
+  function handleLoadMatchSuccess() {
+    setLoadMatchOpen(false)
+    void Promise.all([refresh(), refreshRanking()])
+  }
+
   return (
     <div className="space-y-10 pb-10">
       <motion.div {...fadeUp(0)}>
@@ -118,31 +148,38 @@ export function ChallengesView() {
 
         <motion.div {...fadeUp(1)} className="mt-6 flex flex-wrap gap-3">
           <PrimaryButton onClick={() => setLoadMatchOpen(true)}>
-            <CirclePlus className="size-4" /> Partido Simple
+            <CirclePlus className="size-4" />
+            Cargar partido
           </PrimaryButton>
           <AccentButton onClick={() => setPierdePagaOpen(true)}>
-            <Swords className="size-4" /> Pierde Paga
+            <Swords className="size-4" />
+            Desafío pierde paga
           </AccentButton>
+          <GhostButton onClick={() => setCalculatorOpen(true)}>
+            <Calculator className="size-4" />
+            Calculadora de puntos
+          </GhostButton>
         </motion.div>
       </motion.div>
 
-      <motion.section {...fadeUp(2)}>
-        <SectionTitle
-          title="Partidos cargados"
-          kicker="Partido simple"
-        />
-        <p className="-mt-2 mb-4 text-xs text-muted-foreground">
-          Resultados cargados que necesitan al menos 3 de 4 confirmaciones para
-          publicarse.
+      {actionError && (
+        <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {actionError}
         </p>
-        {sortedSimpleMatches.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card/30 px-5 py-8 text-center text-sm text-muted-foreground">
-            No hay partidos pendientes de confirmación.
-          </div>
+      )}
+
+      <motion.section {...fadeUp(2)}>
+        <SectionTitle kicker="Pendientes" title="Partidos por confirmar" />
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Cargando partidos…</p>
+        ) : sortedSimpleMatches.length === 0 ? (
+          <p className="rounded-2xl border border-border bg-card/40 px-5 py-8 text-sm text-muted-foreground">
+            No tenés partidos pendientes de confirmación.
+          </p>
         ) : (
-          <div className="space-y-3">
-            {sortedSimpleMatches.map((match: PendingSimpleMatch, i) => (
-              <motion.div key={match.id} {...fadeUp(i + 1)}>
+          <div className="space-y-4">
+            {sortedSimpleMatches.map((match, i) => (
+              <motion.div key={match.id} {...fadeUp(i + 3)}>
                 <PendingSimpleMatchCard
                   match={match}
                   userId={player.id}
@@ -156,22 +193,15 @@ export function ChallengesView() {
       </motion.section>
 
       <motion.section {...fadeUp(3)}>
-        <SectionTitle
-          title="Desafíos pendientes"
-          kicker="Pierde paga"
-        />
-        <p className="-mt-2 mb-4 text-xs text-muted-foreground">
-          Primero confirma el compañero del desafiador; después el rival elige
-          compañero dentro de ±200 pts del promedio del equipo A.
-        </p>
+        <SectionTitle kicker="Pierde paga" title="Desafíos en curso" />
         {sortedChallenges.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card/30 px-5 py-8 text-center text-sm text-muted-foreground">
-            No hay desafíos pendientes.
-          </div>
+          <p className="rounded-2xl border border-border bg-card/40 px-5 py-8 text-sm text-muted-foreground">
+            No hay desafíos pierde paga activos.
+          </p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {sortedChallenges.map((challenge: PendingPierdePagaChallenge, i) => (
-              <motion.div key={challenge.id} {...fadeUp(i + 1)}>
+              <motion.div key={challenge.id} {...fadeUp(i + 4)}>
                 <PendingPierdePagaCard
                   challenge={challenge}
                   userId={player.id}
@@ -188,6 +218,11 @@ export function ChallengesView() {
       <LoadMatchModal
         open={loadMatchOpen}
         onClose={() => setLoadMatchOpen(false)}
+        onSuccess={handleLoadMatchSuccess}
+      />
+      <SkillPointsCalculatorModal
+        open={calculatorOpen}
+        onClose={() => setCalculatorOpen(false)}
       />
       <PierdePagaChallengeModal
         open={pierdePagaOpen}

@@ -1,10 +1,11 @@
+import type { PostgrestError } from '@supabase/supabase-js'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
+import { withTimeout } from '@/lib/async'
 import type { PlayerProfileData } from '@/lib/data'
 import type {
   AccountType,
   ProfileRow,
   ProfileUpdateInput,
-  SponsorPrizeSubmission,
 } from '@/lib/types/account'
 import { getAvatarUrl, getDisplayName } from '@/lib/auth/user'
 import { DEFAULT_COUNTRY_ID, defaultProvinceFor } from '@/lib/catalog'
@@ -29,10 +30,6 @@ export const emptyProfile: PlayerProfileData = {
   displayName: '',
   dni: '',
   avatar: '/placeholder-user.jpg',
-  setsWon: 0,
-  setsLost: 0,
-  gamesWon: 0,
-  gamesLost: 0,
 }
 
 export function profileFromGoogle(user: User): PlayerProfileData {
@@ -45,10 +42,6 @@ export function profileFromGoogle(user: User): PlayerProfileData {
     displayName: firstName || fullName || getDisplayName(user),
     dni: '',
     avatar: getAvatarUrl(user) ?? '/placeholder-user.jpg',
-    setsWon: 0,
-    setsLost: 0,
-    gamesWon: 0,
-    gamesLost: 0,
   }
 }
 
@@ -69,10 +62,8 @@ export function profileRowToPlayerData(
     instagram: row.instagram?.trim() || undefined,
     dni: row.dni?.trim() ?? '',
     avatar: row.avatar_url || google?.avatar || '/placeholder-user.jpg',
-    setsWon: row.sets_won,
-    setsLost: row.sets_lost,
-    gamesWon: row.games_won,
-    gamesLost: row.games_lost,
+    address: row.address?.trim() || undefined,
+    phone: row.phone?.trim() || undefined,
   }
 }
 
@@ -91,10 +82,8 @@ export function playerDataToProfileUpdate(
     avatar_url: avatarUrl,
     country_id: countryId,
     province,
-    sets_won: data.setsWon,
-    sets_lost: data.setsLost,
-    games_won: data.gamesWon,
-    games_lost: data.gamesLost,
+    address: data.address?.trim() || null,
+    phone: data.phone?.trim() || null,
   }
 }
 
@@ -110,6 +99,25 @@ export async function fetchProfile(
 
   if (error) throw error
   return data as ProfileRow | null
+}
+
+export async function fetchProfileViaApi(): Promise<ProfileRow> {
+  const response = await fetch('/api/profile', {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+  })
+
+  const body = (await response.json()) as {
+    profile?: ProfileRow
+    error?: string
+  }
+
+  if (!response.ok || !body.profile) {
+    throw new Error(body.error ?? 'No se pudo cargar el perfil')
+  }
+
+  return body.profile
 }
 
 export async function ensureProfile(
@@ -180,6 +188,26 @@ export async function isDniTaken(
   return (data?.length ?? 0) > 0
 }
 
+export function formatProfileSaveError(err: unknown): string {
+  if (err instanceof Error) {
+    const message = err.message.toLowerCase()
+    if (message.includes('row-level security') || message.includes('policy')) {
+      return 'No tenés permiso para guardar estos datos. Probá cerrar sesión y volver a entrar.'
+    }
+    if (message.includes('duplicate key') || message.includes('profiles_dni_unique')) {
+      return 'Ese DNI ya está registrado por otro jugador.'
+    }
+    if (message.includes('tardó demasiado')) {
+      return err.message
+    }
+    return err.message
+  }
+
+  const pg = err as PostgrestError
+  if (pg?.message) return pg.message
+  return 'No se pudo guardar el perfil.'
+}
+
 export async function uploadAvatar(
   supabase: SupabaseClient,
   userId: string,
@@ -191,12 +219,14 @@ export async function uploadAvatar(
     : 'jpg'
   const path = `${userId}/avatar.${safeExt}`
 
-  const { error: uploadError } = await supabase.storage
-    .from('avatars')
-    .upload(path, file, {
+  const { error: uploadError } = await withTimeout(
+    supabase.storage.from('avatars').upload(path, file, {
       upsert: true,
       contentType: file.type || `image/${safeExt}`,
-    })
+    }),
+    20_000,
+    'La subida de la foto tardó demasiado. Probá de nuevo.',
+  )
 
   if (uploadError) throw uploadError
 
@@ -208,42 +238,31 @@ export async function uploadAvatar(
   return url
 }
 
-export async function fetchSponsorSubmissions(
+export async function uploadPrizeImage(
   supabase: SupabaseClient,
-  sponsorId: string,
-): Promise<SponsorPrizeSubmission[]> {
-  const { data, error } = await supabase
-    .from('sponsor_prize_submissions')
-    .select('*')
-    .eq('sponsor_id', sponsorId)
-    .order('created_at', { ascending: false })
+  userId: string,
+  file: File,
+): Promise<string> {
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+  const safeExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)
+    ? ext.replace('jpeg', 'jpg')
+    : 'jpg'
+  const path = `${userId}/${crypto.randomUUID()}.${safeExt}`
 
-  if (error) throw error
-  return (data ?? []) as SponsorPrizeSubmission[]
-}
+  const { error: uploadError } = await withTimeout(
+    supabase.storage.from('prize-images').upload(path, file, {
+      upsert: false,
+      contentType: file.type || `image/${safeExt}`,
+    }),
+    20_000,
+    'La subida de la imagen tardó demasiado. Probá de nuevo.',
+  )
 
-export async function createSponsorSubmission(
-  supabase: SupabaseClient,
-  sponsorId: string,
-  input: {
-    title: string
-    detail: string
-    sponsor_brand: string
-    image_url?: string | null
-  },
-): Promise<SponsorPrizeSubmission> {
-  const { data, error } = await supabase
-    .from('sponsor_prize_submissions')
-    .insert({
-      sponsor_id: sponsorId,
-      title: input.title.trim(),
-      detail: input.detail.trim(),
-      sponsor_brand: input.sponsor_brand.trim(),
-      image_url: input.image_url ?? null,
-    })
-    .select('*')
-    .single()
+  if (uploadError) throw uploadError
 
-  if (error) throw error
-  return data as SponsorPrizeSubmission
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from('prize-images').getPublicUrl(path)
+
+  return `${publicUrl}?t=${Date.now()}`
 }

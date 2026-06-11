@@ -28,10 +28,8 @@ export type PlayerProfileData = {
   instagram?: string
   dni: string
   avatar: string
-  setsWon: number
-  setsLost: number
-  gamesWon: number
-  gamesLost: number
+  address?: string
+  phone?: string
 }
 
 export const defaultProfile: PlayerProfileData = {
@@ -41,10 +39,6 @@ export const defaultProfile: PlayerProfileData = {
   instagram: '',
   dni: '30123456',
   avatar: '/player-1.png',
-  setsWon: 412,
-  setsLost: 198,
-  gamesWon: 2840,
-  gamesLost: 2210,
 }
 
 /** DNIs ya registrados (mock hasta conectar Supabase). */
@@ -84,6 +78,8 @@ export type AnnualRankingPrize = {
   title: string
   sponsor: string
   image?: string
+  detail?: string
+  status?: 'pending' | 'approved'
 }
 
 export type StreakCatalogPrize = {
@@ -92,83 +88,10 @@ export type StreakCatalogPrize = {
   title: string
   sponsor: string
   image?: string
+  detail?: string
   deliveredCount: number
+  status?: 'pending' | 'approved'
 }
-
-/** Premios del podio regional — se entregan 1 vez al año. */
-export const annualRankingPrizes: AnnualRankingPrize[] = [
-  {
-    id: 'annual-1',
-    position: 1,
-    title: 'Kit campeón completo',
-    sponsor: 'Paddle Pro',
-    image: '/tournament-teaser.png',
-  },
-  {
-    id: 'annual-2',
-    position: 2,
-    title: 'Paleta Pro Edition',
-    sponsor: 'SportZone',
-    image: '/sponsors-teaser.png',
-  },
-  {
-    id: 'annual-3',
-    position: 3,
-    title: 'Bolso + accesorios arena',
-    sponsor: 'Arena Norte',
-    image: '/clubs-teaser.png',
-  },
-]
-
-const STREAK_PRIZE_CATALOG: Record<
-  (typeof POSITIVE_STREAK_MILESTONES)[number],
-  Omit<StreakCatalogPrize, 'id' | 'milestone'>
-> = {
-  3: {
-    title: 'Cubregrip PierdePaga',
-    sponsor: 'Paddle Pro',
-    deliveredCount: 284,
-  },
-  5: {
-    title: 'Remera edición arena',
-    sponsor: 'SportZone',
-    deliveredCount: 156,
-  },
-  8: {
-    title: 'Muñequeras premium',
-    sponsor: 'Wilson Padel',
-    deliveredCount: 89,
-  },
-  11: {
-    title: 'Pelotas x3 + funda',
-    sponsor: 'Head',
-    deliveredCount: 52,
-  },
-  14: {
-    title: 'Voucher cancha 2 hs',
-    sponsor: 'Club Padel Formosa',
-    deliveredCount: 31,
-  },
-  17: {
-    title: 'Paleta intermedia',
-    sponsor: 'Bullpadel',
-    deliveredCount: 18,
-  },
-  20: {
-    title: 'Paleta pro firmada',
-    sponsor: 'Adidas Padel',
-    image: '/tournament-teaser.png',
-    deliveredCount: 7,
-  },
-}
-
-/** Premios por hitos de racha positiva (constantes en lib/streaks). */
-export const streakCatalogPrizes: StreakCatalogPrize[] =
-  POSITIVE_STREAK_MILESTONES.map((milestone) => ({
-    id: `streak-${milestone}`,
-    milestone,
-    ...STREAK_PRIZE_CATALOG[milestone],
-  }))
 
 export const me: Player = {
   id: 'me',
@@ -912,10 +835,6 @@ export type PublicPlayerProfile = {
     displayName?: string
     instagram?: string
     avatar: string
-    setsWon: number
-    setsLost: number
-    gamesWon: number
-    gamesLost: number
   }
   matchHistory: MatchRecord[]
   prizes: WonPrize[]
@@ -929,7 +848,7 @@ function splitPlayerName(name: string) {
   return { firstName: parts[0], lastName: parts.slice(1).join(' ') }
 }
 
-function deriveProfileStats(player: Player) {
+export function deriveProfileStats(player: Player) {
   return {
     setsWon: Math.round(player.wins * 2.2),
     setsLost: Math.round(player.losses * 2.1),
@@ -1109,10 +1028,6 @@ export function getPublicPlayerProfile(
         displayName: defaultProfile.displayName || player.displayName,
         instagram: defaultProfile.instagram || undefined,
         avatar: defaultProfile.avatar || player.avatar,
-        setsWon: defaultProfile.setsWon,
-        setsLost: defaultProfile.setsLost,
-        gamesWon: defaultProfile.gamesWon,
-        gamesLost: defaultProfile.gamesLost,
       },
       matchHistory,
       prizes: wonPrizes,
@@ -1121,7 +1036,6 @@ export function getPublicPlayerProfile(
   }
 
   const { firstName, lastName } = splitPlayerName(player.name)
-  const stats = deriveProfileStats(player)
 
   return {
     player,
@@ -1131,7 +1045,6 @@ export function getPublicPlayerProfile(
       displayName: player.displayName,
       instagram: MOCK_INSTAGRAM[player.id],
       avatar: player.avatar,
-      ...stats,
     },
     matchHistory: buildMockMatchHistory(player),
     prizes: buildMockPrizes(player),

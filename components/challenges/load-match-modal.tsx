@@ -8,9 +8,11 @@ import { LoadMatchForm } from '@/components/challenges/load-match-form'
 export function LoadMatchModal({
   open,
   onClose,
+  onSuccess,
 }: {
   open: boolean
   onClose: () => void
+  onSuccess?: () => void
 }) {
   useEffect(() => {
     if (!open) return
@@ -67,7 +69,13 @@ export function LoadMatchModal({
             </div>
 
             <div className="overflow-x-hidden p-6">
-              <LoadMatchForm onSuccess={onClose} onCancel={onClose} />
+              <LoadMatchForm
+                onSuccess={() => {
+                  onSuccess?.()
+                  onClose()
+                }}
+                onCancel={onClose}
+              />
             </div>
           </motion.div>
         </motion.div>

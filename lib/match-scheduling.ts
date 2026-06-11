@@ -160,3 +160,29 @@ export function clampMatchDateTime(
 export function formatTimeSlot(value: Pick<MatchDateTimeValue, 'hour' | 'minute'>) {
   return `${String(value.hour).padStart(2, '0')}:${String(value.minute).padStart(2, '0')}`
 }
+
+export function formatPlayedAt(iso: string, now = new Date()): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+
+  const today = startOfDay(now)
+  const playedDay = startOfDay(date)
+  const diffDays = Math.round(
+    (today.getTime() - playedDay.getTime()) / (24 * 60 * 60 * 1000),
+  )
+
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const time = `${hours}:${minutes}`
+
+  if (diffDays === 0) return `Hoy · ${time}`
+  if (diffDays === 1) return `Ayer · ${time}`
+  if (diffDays === 2) return `Antes de ayer · ${time}`
+
+  return date.toLocaleDateString('es-AR', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}

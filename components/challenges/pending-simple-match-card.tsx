@@ -14,6 +14,7 @@ import {
   userConfirmedSimpleMatch,
 } from '@/lib/pending-activities'
 import { GhostButton, PrimaryButton } from '@/components/ui-kit'
+import { SkillStakesPanel } from '@/components/challenges/skill-stakes-panel'
 import { cn } from '@/lib/utils'
 
 function ConfirmationRow({
@@ -179,6 +180,9 @@ export function PendingSimpleMatchCard({
       </div>
 
       <div className="space-y-3 border-t border-border/50 px-4 py-3">
+        {match.skillStakes && (
+          <SkillStakesPanel stakes={match.skillStakes} className="border-border/60 bg-card/40" />
+        )}
         <ConfirmationRow match={match} userId={userId} />
 
         {(actions.canConfirm || actions.canCancel) && (

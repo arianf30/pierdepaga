@@ -3,7 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const SPONSOR_ALLOWED_PREFIXES = [
   '/premios',
-  '/perfil',
   '/login',
   '/auth',
   '/_next',
@@ -54,15 +53,30 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user) {
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('account_type')
       .eq('id', user.id)
       .maybeSingle()
 
+    const hasProfile = !profileError && profile !== null
     const isSponsor = profile?.account_type === 'sponsor'
+    const isOnboarding = pathname === '/auth/onboarding'
+    const isApi = pathname.startsWith('/api/')
 
-    if (isSponsor) {
+    if (!hasProfile && !isOnboarding && !isPublic && !isApi) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth/onboarding'
+      return NextResponse.redirect(url)
+    }
+
+    if (hasProfile && isOnboarding) {
+      const url = request.nextUrl.clone()
+      url.pathname = isSponsor ? '/premios' : '/inicio'
+      return NextResponse.redirect(url)
+    }
+
+    if (hasProfile && isSponsor && !isApi) {
       const allowed = SPONSOR_ALLOWED_PREFIXES.some(
         (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
       )
@@ -73,13 +87,13 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
-    if (pathname === '/login') {
+    if (hasProfile && pathname === '/login') {
       const url = request.nextUrl.clone()
       url.pathname = isSponsor ? '/premios' : '/inicio'
       return NextResponse.redirect(url)
     }
 
-    if (pathname === '/' && !isSponsor) {
+    if (hasProfile && pathname === '/' && !isSponsor) {
       const url = request.nextUrl.clone()
       url.pathname = '/inicio'
       return NextResponse.redirect(url)

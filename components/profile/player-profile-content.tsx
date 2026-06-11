@@ -14,6 +14,7 @@ import {
   Zap,
 } from 'lucide-react'
 import {
+  deriveProfileStats,
   PROFILE_MATCH_PREVIEW,
   type MatchRecord,
   type Player,
@@ -78,6 +79,8 @@ type PlayerProfileContentProps = {
   readOnly?: boolean
   onEdit?: () => void
   onBack?: () => void
+  editDisabled?: boolean
+  editLabel?: string
 }
 
 export function PlayerProfileContent({
@@ -90,6 +93,8 @@ export function PlayerProfileContent({
   readOnly = false,
   onEdit,
   onBack,
+  editDisabled = false,
+  editLabel = 'Editar perfil',
 }: PlayerProfileContentProps) {
   const [showAllMatches, setShowAllMatches] = useState(false)
 
@@ -99,6 +104,8 @@ export function PlayerProfileContent({
   const visibleMatches = showAllMatches
     ? matchHistory
     : matchHistory.slice(0, PROFILE_MATCH_PREVIEW)
+
+  const performanceStats = deriveProfileStats(player)
 
   const legalName = `${profile.firstName} ${profile.lastName}`.trim()
   const publicName =
@@ -139,10 +146,11 @@ export function PlayerProfileContent({
             <button
               type="button"
               onClick={onEdit}
-              className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-xl border border-border bg-card/80 px-3 py-2 text-xs font-medium text-foreground backdrop-blur-sm transition-colors hover:border-primary/40 sm:right-6 sm:top-6"
+              disabled={editDisabled}
+              className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-xl border border-border bg-card/80 px-3 py-2 text-xs font-medium text-foreground backdrop-blur-sm transition-colors hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-60 sm:right-6 sm:top-6"
             >
               <Pencil className="size-3.5" />
-              Editar perfil
+              {editLabel}
             </button>
           )}
 
@@ -163,18 +171,15 @@ export function PlayerProfileContent({
               <p className="mt-1 text-sm text-muted-foreground">
                 {regionLabel} · {rankingTitle} #{player.rank}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">{player.handle}</p>
               {profile.instagram && (
                 <a
-                  href={`https://instagram.com/${profile.instagram.replace('@', '')}`}
+                  href={`https://instagram.com/${profile.instagram.replace(/^@+/, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary transition-colors hover:text-primary/80"
                 >
                   <AtSign className="size-4" />
-                  {profile.instagram.startsWith('@')
-                    ? profile.instagram
-                    : `@${profile.instagram}`}
+                  {profile.instagram.replace(/^@+/, '')}
                 </a>
               )}
             </div>
@@ -246,10 +251,10 @@ export function PlayerProfileContent({
 
         <motion.div {...fadeUp(4)}>
           <PerformanceDonut
-            setsWon={profile.setsWon}
-            setsLost={profile.setsLost}
-            gamesWon={profile.gamesWon}
-            gamesLost={profile.gamesLost}
+            setsWon={performanceStats.setsWon}
+            setsLost={performanceStats.setsLost}
+            gamesWon={performanceStats.gamesWon}
+            gamesLost={performanceStats.gamesLost}
           />
         </motion.div>
       </div>

@@ -28,6 +28,14 @@ export type PendingSimpleMatch = {
   score: string
   winnerTeam: 'A' | 'B'
   confirmations: SimpleMatchConfirmation[]
+  skillStakes?: {
+    teamAAvg: number
+    teamBAvg: number
+    gainIfAWins: number
+    lossIfAWins: number
+    gainIfBWins: number
+    lossIfAWinsForA: number
+  }
 }
 
 export type PierdePagaChallengeStep =

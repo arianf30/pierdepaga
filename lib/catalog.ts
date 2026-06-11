@@ -17,7 +17,7 @@ export type Country = {
 export const DEFAULT_COUNTRY_ID: CountryId = 'ar'
 
 export const AVAILABLE_PROVINCES_BY_COUNTRY = {
-  ar: ['Formosa', 'Resistencia', 'Corrientes'],
+  ar: ['Formosa', 'Resistencia', 'Corrientes', 'Prueba'],
   py: ['Asunción'],
 } as const satisfies Record<CountryId, readonly string[]>
 

@@ -1,15 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Combobox } from '@base-ui/react/combobox'
 import { Search, X } from 'lucide-react'
-import {
-  leaderboard,
-  PLAYER_SEARCH_LIMIT,
-  searchPlayers,
-  type Player,
-} from '@/lib/data'
+import { PLAYER_SEARCH_LIMIT, type Player } from '@/lib/data'
+import { mapProfileSearchToPlayer } from '@/lib/ranking/map-player'
 import { playerFullName, playerPublicName } from '@/lib/player-names'
+import { useRegion } from '@/components/region-provider'
+import { useSport } from '@/components/sport-provider'
 import { cn } from '@/lib/utils'
 
 const labelClass = 'type-label mb-1.5 block text-[11px]'
@@ -99,23 +97,84 @@ export function PlayerSearchField({
   tone?: 'primary' | 'accent'
 }) {
   const isAccent = tone === 'accent'
+  const { country, province } = useRegion()
+  const { sport } = useSport()
   const [inputValue, setInputValue] = useState('')
   const [open, setOpen] = useState(false)
-
-  const candidates = useMemo(
-    () => leaderboard.filter((p) => !excludeIds.includes(p.id)),
-    [excludeIds],
-  )
+  const [results, setResults] = useState<Player[]>([])
+  const [searching, setSearching] = useState(false)
 
   const hasQuery = inputValue.trim().length > 0
 
-  const results = useMemo(() => {
-    if (!hasQuery) return []
-    return searchPlayers(inputValue, {
-      excludeIds,
-      limit: PLAYER_SEARCH_LIMIT,
-    })
-  }, [inputValue, excludeIds, hasQuery])
+  useEffect(() => {
+    if (!hasQuery) {
+      setResults([])
+      return
+    }
+
+    const controller = new AbortController()
+    const timeout = window.setTimeout(async () => {
+      setSearching(true)
+      try {
+        const params = new URLSearchParams({
+          country,
+          province,
+          sport,
+          q: inputValue.trim(),
+        })
+        excludeIds.forEach((id) => params.append('exclude', id))
+
+        const response = await fetch(`/api/players/search?${params}`, {
+          credentials: 'include',
+          cache: 'no-store',
+          signal: controller.signal,
+        })
+        const body = (await response.json()) as {
+          players?: Array<{
+            id: string
+            first_name: string
+            last_name: string
+            display_name: string
+            avatar_url: string | null
+            ranking: {
+              rank_position: number | null
+              skill_rating: number
+              wins: number
+              losses: number
+              streak: number
+              rank_delta: number
+            } | null
+          }>
+        }
+
+        if (!response.ok) {
+          setResults([])
+          return
+        }
+
+        setResults(
+          (body.players ?? []).map((row) =>
+            mapProfileSearchToPlayer(
+              {
+                ...row,
+                ranking: row.ranking,
+              },
+              province,
+            ),
+          ),
+        )
+      } catch {
+        if (!controller.signal.aborted) setResults([])
+      } finally {
+        if (!controller.signal.aborted) setSearching(false)
+      }
+    }, 250)
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeout)
+    }
+  }, [country, province, sport, inputValue, excludeIds, hasQuery])
 
   useEffect(() => {
     setInputValue('')
@@ -146,7 +205,7 @@ export function PlayerSearchField({
 
       <Combobox.Root
         key="player-search"
-        items={candidates}
+        items={results}
         filteredItems={results}
         limit={PLAYER_SEARCH_LIMIT}
         autoHighlight
@@ -190,7 +249,9 @@ export function PlayerSearchField({
             <Combobox.Popup className="w-(--anchor-width) rounded-xl border border-border bg-popover shadow-xl">
               <Combobox.Empty className="p-0">
                 <span className="block px-3 py-3 text-center text-xs text-muted-foreground">
-                  No encontramos ese jugador
+                  {searching
+                    ? 'Buscando jugadores…'
+                    : 'No encontramos ese jugador'}
                 </span>
               </Combobox.Empty>
 

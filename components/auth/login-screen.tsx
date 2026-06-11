@@ -2,15 +2,20 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Gift, Swords, Trophy } from 'lucide-react'
+import { Loader2, Mail, Trophy } from 'lucide-react'
 import { Atmosphere } from '@/components/atmosphere'
 import { BrandLogo } from '@/components/brand-logo'
-import { fadeUp } from '@/components/ui-kit'
+import { fadeUp, GhostButton, PrimaryButton } from '@/components/ui-kit'
 import { createClient } from '@/lib/supabase/client'
-import type { AccountType } from '@/lib/types/account'
 import { routes } from '@/lib/routes'
 import { cn } from '@/lib/utils'
+
+type AuthMode = 'signin' | 'signup'
+
+const inputClass =
+  'w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50 focus:ring-1 focus:ring-primary/25'
 
 function GoogleIcon() {
   return (
@@ -38,90 +43,51 @@ function GoogleIcon() {
   )
 }
 
-function RoleOption({
-  type,
-  selected,
-  onSelect,
-}: {
-  type: AccountType
-  selected: boolean
-  onSelect: () => void
-}) {
-  const isPlayer = type === 'jugador'
+async function redirectAfterSession(router: ReturnType<typeof useRouter>) {
+  const response = await fetch('/api/profile', {
+    credentials: 'include',
+    cache: 'no-store',
+  })
 
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        'group relative flex flex-1 flex-col items-start rounded-2xl border px-4 py-4 text-left transition-all duration-200',
-        isPlayer ? 'min-h-[7.5rem]' : 'min-h-[6.5rem] opacity-80 hover:opacity-100',
-        selected && isPlayer
-          ? 'border-primary/50 bg-primary/10 ring-1 ring-primary/30 shadow-[0_0_32px_oklch(0.78_0.14_195/0.18)]'
-          : selected && !isPlayer
-            ? 'border-accent/45 bg-accent/8 ring-1 ring-accent/25'
-            : 'border-border/80 bg-secondary/20 hover:border-border',
-      )}
-    >
-      {selected && isPlayer && (
-        <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
-      )}
-      <span
-        className={cn(
-          'mb-3 grid place-items-center rounded-xl border',
-          isPlayer ? 'size-10' : 'size-9',
-          selected && isPlayer
-            ? 'border-primary/40 bg-primary/15 text-primary'
-            : selected && !isPlayer
-              ? 'border-accent/35 bg-accent/10 text-accent'
-              : 'border-border bg-background/40 text-muted-foreground',
-        )}
-      >
-        {isPlayer ? (
-          <Swords className="size-5" strokeWidth={2} />
-        ) : (
-          <Gift className="size-4" strokeWidth={2} />
-        )}
-      </span>
-      <span
-        className={cn(
-          'font-display font-bold uppercase tracking-wide',
-          isPlayer ? 'text-sm' : 'text-xs',
-          selected && isPlayer && 'text-primary',
-          selected && !isPlayer && 'text-accent',
-          !selected && 'text-foreground',
-        )}
-      >
-        {isPlayer ? 'Jugador' : 'Sponsor'}
-      </span>
-      <span className="mt-1 text-[11px] leading-snug text-muted-foreground">
-        {isPlayer
-          ? 'Competí, subí en el ranking y cargá partidos.'
-          : 'Postulá premios para la comunidad.'}
-      </span>
-      {isPlayer && selected && (
-        <span className="type-badge mt-3 rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary">
-          Recomendado
-        </span>
-      )}
-    </button>
-  )
+  if (response.status === 404) {
+    router.replace('/auth/onboarding')
+    router.refresh()
+    return
+  }
+
+  if (!response.ok) {
+    throw new Error('No se pudo verificar tu perfil.')
+  }
+
+  const body = (await response.json()) as {
+    profile?: { account_type?: string }
+  }
+
+  const destination =
+    body.profile?.account_type === 'sponsor' ? routes.prizes : routes.home
+  router.replace(destination)
+  router.refresh()
 }
 
 export function LoginScreen({ errorMessage }: { errorMessage?: string | null }) {
-  const [accountType, setAccountType] = useState<AccountType>('jugador')
+  const router = useRouter()
+  const [mode, setMode] = useState<AuthMode>('signin')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(errorMessage ?? null)
+  const [info, setInfo] = useState<string | null>(null)
 
   async function handleGoogleLogin() {
-    if (loading) return
-    setLoading(true)
+    if (loading || googleLoading) return
+    setGoogleLoading(true)
     setError(null)
+    setInfo(null)
 
     try {
       const supabase = createClient()
-      const next = accountType === 'sponsor' ? '/premios' : '/inicio'
-      const redirectTo = `${window.location.origin}/auth/callback?account_type=${accountType}&next=${encodeURIComponent(next)}`
+      const redirectTo = `${window.location.origin}/auth/callback`
 
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -132,12 +98,69 @@ export function LoginScreen({ errorMessage }: { errorMessage?: string | null }) 
       })
       if (authError) {
         setError(authError.message)
-        setLoading(false)
+        setGoogleLoading(false)
       }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Error al conectar con Google',
       )
+      setGoogleLoading(false)
+    }
+  }
+
+  async function handleEmailSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (loading || googleLoading) return
+
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail || !password) {
+      setError('Completá correo y contraseña.')
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    setInfo(null)
+
+    try {
+      const supabase = createClient()
+
+      if (mode === 'signup') {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: trimmedEmail,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        })
+
+        if (signUpError) throw signUpError
+
+        if (data.session) {
+          await redirectAfterSession(router)
+          return
+        }
+
+        setInfo(
+          'Te enviamos un correo de confirmación. Abrilo para activar tu cuenta.',
+        )
+        setMode('signin')
+        return
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      })
+
+      if (signInError) throw signInError
+
+      await redirectAfterSession(router)
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'No se pudo completar el acceso',
+      )
+    } finally {
       setLoading(false)
     }
   }
@@ -168,8 +191,8 @@ export function LoginScreen({ errorMessage }: { errorMessage?: string | null }) 
             <span className="text-foreground/90">Que pague el rival.</span>
           </h1>
           <p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Un solo acceso con Google. Elegí si venís a jugar o a sponsorear
-            premios para los mejores de cada provincia.
+            Entrá con correo y contraseña o con Google. Si es tu primera vez,
+            elegís si venís a jugar o a sponsorear premios.
           </p>
         </motion.div>
 
@@ -179,50 +202,127 @@ export function LoginScreen({ errorMessage }: { errorMessage?: string | null }) 
         >
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
-          <div className="mb-6">
-            <p className="type-kicker">Tipo de cuenta</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Por defecto entrás como jugador
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <RoleOption
-              type="jugador"
-              selected={accountType === 'jugador'}
-              onSelect={() => setAccountType('jugador')}
-            />
-            <RoleOption
-              type="sponsor"
-              selected={accountType === 'sponsor'}
-              onSelect={() => setAccountType('sponsor')}
-            />
+          <div className="mb-5 flex rounded-xl border border-border bg-secondary/30 p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signin')
+                setError(null)
+                setInfo(null)
+              }}
+              className={cn(
+                'flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                mode === 'signin'
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Iniciar sesión
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup')
+                setError(null)
+                setInfo(null)
+              }}
+              className={cn(
+                'flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                mode === 'signup'
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Registrarse
+            </button>
           </div>
 
           {(error || errorMessage) && (
-            <p className="mt-5 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <p className="mb-4 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error ?? errorMessage}
             </p>
           )}
 
-          <button
+          {info && (
+            <p className="mb-4 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
+              {info}
+            </p>
+          )}
+
+          <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <div>
+              <label className="type-label mb-1.5 block text-[11px]" htmlFor="email">
+                Correo electrónico
+              </label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className={cn(inputClass, 'pl-10')}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@correo.com"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                className="type-label mb-1.5 block text-[11px]"
+                htmlFor="password"
+              >
+                Contraseña
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete={
+                  mode === 'signup' ? 'new-password' : 'current-password'
+                }
+                required
+                minLength={6}
+                className={inputClass}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
+
+            <PrimaryButton type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  {mode === 'signup' ? 'Creando cuenta…' : 'Entrando…'}
+                </>
+              ) : mode === 'signup' ? (
+                'Crear cuenta'
+              ) : (
+                'Entrar con correo'
+              )}
+            </PrimaryButton>
+          </form>
+
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-[11px] text-muted-foreground">o</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          <GhostButton
             type="button"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className={cn(
-              'mt-6 flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white px-5 py-3.5 text-sm font-semibold text-[#1f1f1f] transition-all',
-              'hover:bg-white/95 hover:shadow-[0_0_24px_rgba(255,255,255,0.12)]',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-            )}
+            onClick={() => void handleGoogleLogin()}
+            disabled={loading || googleLoading}
+            className="w-full border-white/10 bg-white text-[#1f1f1f] hover:bg-white/95 hover:text-[#1f1f1f]"
           >
             <GoogleIcon />
-            {loading ? 'Conectando con Google…' : 'Continuar con Google'}
-          </button>
+            {googleLoading ? 'Conectando con Google…' : 'Continuar con Google'}
+          </GhostButton>
 
           <p className="mt-5 text-center text-[11px] leading-relaxed text-muted-foreground">
-            {accountType === 'jugador'
-              ? 'Al registrarte aceptás competir en el ecosistema PierdePaga de tu provincia.'
-              : 'Como sponsor solo podés postular premios. No tenés acceso a partidos ni ranking.'}
+            Al registrarte aceptás las reglas de PierdePaga en tu provincia.
           </p>
         </motion.div>
       </div>

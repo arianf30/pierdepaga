@@ -112,7 +112,6 @@ export function HomeView() {
                 <p className="font-display text-lg font-semibold">
                   {playerPublicName(player)}
                 </p>
-                <p className="text-xs text-muted-foreground">{player.handle}</p>
                 <p className="mt-1 font-display text-2xl font-black tabular-nums text-accent">
                   {formatSkill(playerSkill(player))}
                   <span className="type-label ml-1.5 text-[10px] font-medium text-muted-foreground">

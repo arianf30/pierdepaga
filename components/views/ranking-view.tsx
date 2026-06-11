@@ -21,6 +21,7 @@ import { fadeUp } from '@/components/ui-kit'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/components/auth/user-provider'
 import { useRegion } from '@/components/region-provider'
+import { useRanking } from '@/hooks/use-ranking'
 import { formatSkill, playerSkill, SKILL_LABEL } from '@/lib/skill'
 import { formatStreakValue } from '@/lib/streaks'
 import { StreakBadge } from '@/components/arena/streak-badge'
@@ -336,17 +337,18 @@ function RankingRow({
 export function RankingView() {
   const router = useRouter()
   const { player } = useUser()
-
-  function handleViewPlayer(playerId: string) {
-    router.push(playerProfilePath(playerId))
-  }
   const { rankingTitle } = useRegion()
+  const { leaderboard, loading, error } = useRanking()
   const [page, setPage] = useState(0)
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortState>({
     column: 'rank',
     direction: 'asc',
   })
+
+  function handleViewPlayer(playerId: string) {
+    router.push(playerProfilePath(playerId))
+  }
 
   function handleSort(column: SortColumn) {
     setSort((prev) => {
@@ -386,9 +388,18 @@ export function RankingView() {
         <h1 className="text-3xl font-semibold tracking-tight lg:text-4xl">
           {rankingTitle}
         </h1>
+        {error && (
+          <p className="mt-2 text-sm text-destructive">{error}</p>
+        )}
       </motion.div>
 
       <motion.section {...fadeUp(1)}>
+        {loading ? (
+          <div className="rounded-2xl border border-border bg-card/50 px-5 py-12 text-center text-sm text-muted-foreground">
+            Cargando ranking…
+          </div>
+        ) : (
+          <>
         <div className="relative mb-4 sm:max-w-sm">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -473,10 +484,7 @@ export function RankingView() {
 
               {pagePlayers.length > 0 ? (
                 pagePlayers.map((p, i) => {
-                  const isMe =
-                    p.id === 'me' ||
-                    p.handle === player.handle ||
-                    p.id === player.id
+                  const isMe = p.id === player.id
                   return (
                     <RankingRow
                       key={p.id}
@@ -490,10 +498,14 @@ export function RankingView() {
               ) : (
                 <div className="px-5 py-12 text-center">
                   <p className="text-sm font-medium text-foreground">
-                    No encontramos jugadores
+                    {leaderboard.length === 0
+                      ? 'Todavía no hay partidos en este ranking'
+                      : 'No encontramos jugadores'}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Probá con otro nombre o usuario
+                    {leaderboard.length === 0
+                      ? 'Cargá un partido en Desafíos para empezar a sumar posiciones.'
+                      : 'Probá con otro nombre o usuario'}
                   </p>
                 </div>
               )}
@@ -553,6 +565,8 @@ export function RankingView() {
             </motion.span>
           </Link>
         </div>
+          </>
+        )}
       </motion.section>
     </div>
   )

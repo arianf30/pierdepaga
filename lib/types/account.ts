@@ -11,10 +11,9 @@ export type ProfileRow = {
   avatar_url: string | null
   country_id: string
   province: string
-  sets_won: number
-  sets_lost: number
-  games_won: number
-  games_lost: number
+  address: string | null
+  phone: string | null
+  is_admin: boolean
   created_at: string
   updated_at: string
 }
@@ -28,19 +27,38 @@ export type ProfileUpdateInput = {
   avatar_url: string | null
   country_id: string
   province: string
-  sets_won?: number
-  sets_lost?: number
-  games_won?: number
-  games_lost?: number
+  address: string | null
+  phone: string | null
 }
+
+export type SponsorPrizeType = 'ranking' | 'streak'
+
+export type SponsorPrizeStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'delivered'
 
 export type SponsorPrizeSubmission = {
   id: string
-  sponsor_id: string
+  user_id: string
+  country_id: string
+  province: string
+  sport_id: string
+  scope_id: string | null
   title: string
   detail: string
   sponsor_brand: string
   image_url: string | null
-  status: 'pending' | 'approved' | 'rejected'
+  prize_type: SponsorPrizeType
+  ranking_position: 1 | 2 | 3 | null
+  streak_milestone: number | null
+  quantity_available: number
+  delivered_count: number
+  status: SponsorPrizeStatus
   created_at: string
 }
+
+export type SponsorPrizeTarget =
+  | { prizeType: 'ranking'; rankingPosition: 1 | 2 | 3 }
+  | { prizeType: 'streak'; streakMilestone: number }

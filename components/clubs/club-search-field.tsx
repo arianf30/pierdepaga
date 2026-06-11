@@ -8,6 +8,7 @@ import {
   searchClubs,
   type Club,
 } from '@/lib/data'
+import { useRegion } from '@/components/region-provider'
 import { cn } from '@/lib/utils'
 
 const labelClass = 'type-label mb-1.5 block text-[11px]'
@@ -21,6 +22,8 @@ const inputClass =
 export type ClubSelection = {
   id: string
   name: string
+  province: string
+  country_id: string
   isCustom?: boolean
 }
 
@@ -101,11 +104,26 @@ function SelectedClubField({
   )
 }
 
-function toSelection(item: ClubListItem): ClubSelection {
+function toSelection(
+  item: ClubListItem,
+  countryId: string,
+  fallbackProvince: string,
+): ClubSelection {
   if (item.isCustom) {
-    return { id: `custom:${item.name}`, name: item.name, isCustom: true }
+    return {
+      id: `custom:${item.name}`,
+      name: item.name,
+      province: fallbackProvince,
+      country_id: countryId,
+      isCustom: true,
+    }
   }
-  return { id: item.id, name: item.name }
+  return {
+    id: item.id,
+    name: item.name,
+    province: item.city ?? fallbackProvince,
+    country_id: countryId,
+  }
 }
 
 export function ClubSearchField({
@@ -121,6 +139,7 @@ export function ClubSearchField({
   onChange: (club: ClubSelection | null) => void
   placeholder?: string
 }) {
+  const { country, province } = useRegion()
   const [inputValue, setInputValue] = useState('')
   const [open, setOpen] = useState(false)
 
@@ -187,7 +206,7 @@ export function ClubSearchField({
         isItemEqualToValue={(a: ClubListItem, b: ClubListItem) => a.id === b.id}
         onValueChange={(item: ClubListItem | null) => {
           if (item) {
-            onChange(toSelection(item))
+            onChange(toSelection(item, country, province))
             setInputValue('')
             setOpen(false)
           }

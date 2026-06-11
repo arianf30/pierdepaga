@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "db:setup": "node scripts/apply-supabase-schema.mjs"
+    "db:setup": "node scripts/apply-supabase-schema.mjs",
+    "db:game": "node scripts/apply-game-schema.mjs",
+    "db:prizes": "node scripts/apply-prizes-schema.mjs",
+    "db:skill-transfer": "node scripts/apply-skill-transfer.mjs",
+    "db:seed-players": "node scripts/seed-test-players.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

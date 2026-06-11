@@ -63,8 +63,18 @@ async function main() {
   await client.connect()
   console.log('Aplicando esquema…')
   await client.query(sql)
+
+  const gamePath = resolve(root, 'supabase/schema-game.sql')
+  if (existsSync(gamePath)) {
+    const gameSql = readFileSync(gamePath, 'utf8')
+    console.log('Aplicando esquema de juego…')
+    await client.query(gameSql)
+  }
+
   await client.end()
-  console.log('Listo: profiles, sponsor_prize_submissions, bucket avatars y políticas RLS.')
+  console.log(
+    'Listo: profiles, sponsor_prize_submissions, dominio de juego (scopes, partidos, ranking).',
+  )
 }
 
 main().catch((err) => {
