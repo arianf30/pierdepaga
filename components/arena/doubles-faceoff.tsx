@@ -2,20 +2,19 @@ import { Clock, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MatchType, Player } from '@/lib/data'
 import { teamLabel } from '@/lib/data'
-
-function playerShortName(name: string) {
-  return name.split(' ')[0] ?? name
-}
+import { playerShortPublicName } from '@/lib/player-names'
 
 function TeamStack({
   players,
   won,
+  accentWin,
   compact,
   align = 'start',
   names = 'inline',
 }: {
   players: [Player, Player]
   won?: boolean
+  accentWin?: boolean
   compact?: boolean
   align?: 'start' | 'end'
   names?: 'inline' | 'stacked'
@@ -26,7 +25,8 @@ function TeamStack({
     <div
       className={cn(
         'min-w-0 flex-1',
-        won ? 'text-primary' : 'text-foreground',
+        won && (accentWin ? 'text-accent' : 'text-primary'),
+        !won && 'text-foreground',
         isEnd && 'text-right',
       )}
     >
@@ -46,7 +46,7 @@ function TeamStack({
               'rounded-lg object-cover ring-2 ring-card',
               compact ? 'size-9 sm:size-8' : 'size-10 sm:size-9',
               i === 1 && (isEnd ? '-mr-2.5' : '-ml-2.5'),
-              won && 'ring-primary/35',
+              won && (accentWin ? 'ring-accent/35' : 'ring-primary/35'),
             )}
           />
         ))}
@@ -64,10 +64,10 @@ function TeamStack({
               key={p.id}
               className={cn(
                 'text-xs font-semibold leading-tight',
-                won && 'text-glow-energy',
+                won && (accentWin ? 'text-glow-gold' : 'text-glow-energy'),
               )}
             >
-              {playerShortName(p.name)}
+              {playerShortPublicName(p)}
             </p>
           ))}
         </div>
@@ -86,14 +86,25 @@ function TeamStack({
   )
 }
 
-function VsDivider({ variant = 'default' }: { variant?: 'default' | 'arena' }) {
-  if (variant === 'arena') {
+function VsDivider({
+  variant = 'default',
+}: {
+  variant?: 'default' | 'arena' | 'pierdePaga'
+}) {
+  if (variant === 'arena' || variant === 'pierdePaga') {
     return (
       <div className="flex shrink-0 flex-col items-center gap-1 px-1">
         <span className="font-display text-[10px] font-black tracking-[0.2em] text-muted-foreground/45">
           VS
         </span>
-        <div className="h-10 w-px bg-gradient-to-b from-transparent via-primary/25 to-transparent" />
+        <div
+          className={cn(
+            'h-10 w-px bg-gradient-to-b from-transparent to-transparent',
+            variant === 'pierdePaga'
+              ? 'via-accent/25'
+              : 'via-primary/25',
+          )}
+        />
       </div>
     )
   }
@@ -162,19 +173,25 @@ export function DoublesFaceoff({
   stake?: string
   highlight?: boolean
 }) {
+  const isPierdePaga = type === 'Desafío pierde paga'
+
   return (
     <div
       className={cn(
         'overflow-hidden rounded-2xl border bg-card/50 transition-colors',
-        highlight
-          ? 'border-accent/35 bg-accent/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
-          : 'border-border hover:border-border/80 hover:bg-card/60',
+        isPierdePaga
+          ? 'border-accent/20 hover:border-accent/30'
+          : highlight
+            ? 'border-accent/35 bg-accent/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+            : 'border-border hover:border-border/80 hover:bg-card/60',
+        isPierdePaga && 'bg-accent/[0.03]',
       )}
     >
       <div className="flex items-center gap-2 px-3 py-3.5 sm:gap-4 sm:px-4">
         <TeamStack
           players={teamA}
           won={winnerTeam === 'A'}
+          accentWin={isPierdePaga && winnerTeam === 'A'}
           compact
           align="start"
           names="stacked"
@@ -196,6 +213,7 @@ export function DoublesFaceoff({
         <TeamStack
           players={teamB}
           won={winnerTeam === 'B'}
+          accentWin={isPierdePaga && winnerTeam === 'B'}
           compact
           align="end"
           names="stacked"
@@ -240,7 +258,12 @@ export function UpcomingDoublesCard({
       <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 font-display text-sm font-bold leading-tight">
-            <Clock className="size-3.5 shrink-0 text-primary" />
+            <Clock
+              className={cn(
+                'size-3.5 shrink-0',
+                isPierdePaga ? 'text-accent' : 'text-primary',
+              )}
+            />
             {scheduledAt}
           </p>
           <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
@@ -262,7 +285,7 @@ export function UpcomingDoublesCard({
           align="start"
           names="stacked"
         />
-        <VsDivider variant="arena" />
+        <VsDivider variant={isPierdePaga ? 'pierdePaga' : 'arena'} />
         <TeamStack
           players={teamB}
           compact

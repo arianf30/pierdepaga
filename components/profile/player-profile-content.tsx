@@ -22,6 +22,7 @@ import {
 } from '@/lib/data'
 import { SectionTitle, fadeUp, GhostButton } from '@/components/ui-kit'
 import { cn } from '@/lib/utils'
+import { playerPublicName } from '@/lib/player-names'
 import { formatSkill, playerSkill, SKILL_LABEL } from '@/lib/skill'
 
 function MatchRow({
@@ -101,6 +102,13 @@ export function PlayerProfileContent({
     ? matchHistory
     : matchHistory.slice(0, PROFILE_MATCH_PREVIEW)
 
+  const legalName = `${profile.firstName} ${profile.lastName}`.trim()
+  const publicName =
+    profile.displayName?.trim() || playerPublicName(player)
+  const showLegalName =
+    legalName.length > 0 &&
+    legalName.localeCompare(publicName, 'es', { sensitivity: 'accent' }) !== 0
+
   return (
     <div className="space-y-8 pb-10">
       <motion.section
@@ -144,13 +152,16 @@ export function PlayerProfileContent({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={profile.avatar || player.avatar || '/placeholder.svg'}
-              alt={player.name}
+              alt={publicName}
               className="size-28 rounded-2xl object-cover ring-2 ring-primary/60 ring-glow-energy sm:size-32"
             />
             <div className="flex-1 pb-1">
               <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                {profile.firstName} {profile.lastName}
+                {publicName}
               </h1>
+              {showLegalName && (
+                <p className="mt-1 text-sm text-muted-foreground">{legalName}</p>
+              )}
               <p className="mt-1 text-sm text-muted-foreground">
                 {regionLabel} · {rankingTitle} #{player.rank}
               </p>

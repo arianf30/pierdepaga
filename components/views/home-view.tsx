@@ -1,8 +1,8 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Swords, Trophy } from 'lucide-react'
+import { CirclePlus, Swords, Trophy } from 'lucide-react'
 import {
   buildArenaFeed,
   isHighStakesMatch,
@@ -13,19 +13,25 @@ import {
 import {
   SectionTitle,
   StatChip,
+  AccentButton,
   PrimaryButton,
   GhostButton,
   fadeUp,
 } from '@/components/ui-kit'
 import { useUser } from '@/components/auth/user-provider'
 import { useRegion } from '@/components/region-provider'
+import { playerPublicName } from '@/lib/player-names'
 import { formatSkill, playerSkill, SKILL_LABEL } from '@/lib/skill'
 import {
   DoublesFaceoff,
   UpcomingDoublesCard,
 } from '@/components/arena/doubles-faceoff'
+import { LoadMatchModal } from '@/components/challenges/load-match-modal'
+import { PierdePagaChallengeModal } from '@/components/challenges/pierde-paga-challenge-modal'
 
 export function HomeView({ setView }: { setView: (v: View) => void }) {
+  const [loadMatchOpen, setLoadMatchOpen] = useState(false)
+  const [pierdePagaOpen, setPierdePagaOpen] = useState(false)
   const { player } = useUser()
   const { rankingTitle } = useRegion()
   const winRate = Math.round(
@@ -62,7 +68,9 @@ export function HomeView({ setView }: { setView: (v: View) => void }) {
             >
               Bienvenido de vuelta,
               <br />
-              <span className="text-primary text-glow-energy">{player.name}</span>
+              <span className="text-primary text-glow-energy">
+                {playerPublicName(player)}
+              </span>
             </motion.h1>
             <motion.p
               {...fadeUp(2)}
@@ -72,9 +80,12 @@ export function HomeView({ setView }: { setView: (v: View) => void }) {
             </motion.p>
 
             <motion.div {...fadeUp(3)} className="mt-7 flex flex-wrap gap-3">
-              <PrimaryButton onClick={() => setView('challenges')}>
-                <Swords className="size-4" /> Buscar rival
+              <PrimaryButton onClick={() => setLoadMatchOpen(true)}>
+                <CirclePlus className="size-4" /> Partido Simple
               </PrimaryButton>
+              <AccentButton onClick={() => setPierdePagaOpen(true)}>
+                <Swords className="size-4" /> Pierde Paga
+              </AccentButton>
               <GhostButton onClick={() => setView('ranking')}>
                 <Trophy className="size-4" /> Ver ranking
               </GhostButton>
@@ -89,11 +100,13 @@ export function HomeView({ setView }: { setView: (v: View) => void }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={player.avatar || '/placeholder.svg'}
-                alt={player.name}
+                alt={playerPublicName(player)}
                 className="size-16 rounded-xl object-cover ring-2 ring-primary/50"
               />
               <div>
-                <p className="font-display text-lg font-semibold">{player.name}</p>
+                <p className="font-display text-lg font-semibold">
+                  {playerPublicName(player)}
+                </p>
                 <p className="text-xs text-muted-foreground">{player.handle}</p>
                 <p className="mt-1 font-display text-2xl font-black tabular-nums text-accent">
                   {formatSkill(playerSkill(player))}
@@ -133,18 +146,7 @@ export function HomeView({ setView }: { setView: (v: View) => void }) {
       )}
 
       <motion.section {...fadeUp(2)}>
-        <SectionTitle
-          title="Recientes"
-          action={
-            <button
-              type="button"
-              onClick={() => setView('ranking')}
-              className="text-xs font-semibold text-primary transition-colors hover:text-accent"
-            >
-              Ver ranking
-            </button>
-          }
-        />
+        <SectionTitle title="Recientes" />
         <div className="space-y-3">
           {recentFeed.map((m, i) => (
             <motion.div key={m.id} {...fadeUp(i + 1)}>
@@ -162,6 +164,15 @@ export function HomeView({ setView }: { setView: (v: View) => void }) {
           ))}
         </div>
       </motion.section>
+
+      <LoadMatchModal
+        open={loadMatchOpen}
+        onClose={() => setLoadMatchOpen(false)}
+      />
+      <PierdePagaChallengeModal
+        open={pierdePagaOpen}
+        onClose={() => setPierdePagaOpen(false)}
+      />
     </div>
   )
 }

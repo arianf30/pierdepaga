@@ -6,8 +6,6 @@ import {
   Trophy,
   Medal,
   Swords,
-  Sparkles,
-  Bell,
   LogOut,
 } from 'lucide-react'
 import type { View } from '@/lib/data'
@@ -20,14 +18,14 @@ import {
   useIsLg,
 } from '@/components/bar-backdrop'
 import { BrandLogo } from '@/components/brand-logo'
+import { playerPublicName } from '@/lib/player-names'
 import { RegionSelectors } from '@/components/region-selectors'
 
 const items: { id: View; label: string; icon: typeof Home }[] = [
-  { id: 'home', label: 'Arena', icon: Home },
+  { id: 'home', label: 'Inicio', icon: Home },
   { id: 'ranking', label: 'Ranking', icon: Trophy },
   { id: 'prizes', label: 'Premios', icon: Medal },
   { id: 'challenges', label: 'Desafíos', icon: Swords },
-  { id: 'soon', label: 'Expansiones', icon: Sparkles },
 ]
 
 export function ConsoleNav({
@@ -125,15 +123,11 @@ export function ConsoleNav({
 }
 
 function TopBarContent({
-  onBell,
   onProfile,
   isProfile,
-  isNotifications,
 }: {
-  onBell?: () => void
   onProfile?: () => void
   isProfile?: boolean
-  isNotifications?: boolean
 }) {
   const { player } = useUser()
 
@@ -142,20 +136,6 @@ function TopBarContent({
       <RegionSelectors />
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        <button
-          onClick={onBell}
-          className={cn(
-            'relative grid size-9 place-items-center rounded-lg border transition-colors',
-            isNotifications
-              ? 'border-primary/40 bg-primary/10 text-primary ring-1 ring-primary/25'
-              : 'border-border bg-secondary/60 text-muted-foreground hover:text-foreground',
-          )}
-          aria-label="Notificaciones"
-          aria-current={isNotifications ? 'page' : undefined}
-        >
-          <Bell className="size-4" />
-          <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-destructive ring-2 ring-background" />
-        </button>
         <button
           type="button"
           onClick={onProfile}
@@ -175,10 +155,10 @@ function TopBarContent({
             className="size-7 rounded-md object-cover"
           />
           <span className="font-display text-xs font-bold uppercase tracking-wide text-foreground sm:hidden">
-            {getInitials(player.name)}
+            {getInitials(playerPublicName(player))}
           </span>
           <span className="hidden text-xs font-semibold sm:inline">
-            {player.name}
+            {playerPublicName(player)}
           </span>
         </button>
       </div>
@@ -187,15 +167,11 @@ function TopBarContent({
 }
 
 export function TopBar({
-  onBell,
   onProfile,
   isProfile,
-  isNotifications,
 }: {
-  onBell?: () => void
   onProfile?: () => void
   isProfile?: boolean
-  isNotifications?: boolean
 }) {
   const isLg = useIsLg()
   const usePortal = isLg === false
@@ -210,12 +186,7 @@ export function TopBar({
       )}
     >
       <BackdropBlur edge="top" />
-      <TopBarContent
-        onBell={onBell}
-        onProfile={onProfile}
-        isProfile={isProfile}
-        isNotifications={isNotifications}
-      />
+      <TopBarContent onProfile={onProfile} isProfile={isProfile} />
     </header>
   )
 

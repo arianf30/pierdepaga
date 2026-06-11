@@ -68,6 +68,7 @@ export function ProfileEditSheet({
         ...draft,
         firstName: draft.firstName.trim(),
         lastName: draft.lastName.trim(),
+        displayName: draft.displayName.trim(),
         instagram: draft.instagram?.trim() || undefined,
         dni: draft.dni.trim(),
       },
@@ -164,6 +165,26 @@ export function ProfileEditSheet({
               }
             />
           </div>
+        </div>
+
+        <div className="mt-4">
+          <label className={labelClass} htmlFor="displayName">
+            Nombre para mostrar
+          </label>
+          <input
+            id="displayName"
+            required
+            className={inputClass}
+            value={draft.displayName}
+            onChange={(e) =>
+              setDraft((p) => ({ ...p, displayName: e.target.value }))
+            }
+            placeholder="Cómo te ven en el ranking y los desafíos"
+          />
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Otros jugadores también pueden encontrarte por nombre, apellido o
+            este alias al buscarte.
+          </p>
         </div>
 
         <div className="mt-4">

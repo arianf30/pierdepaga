@@ -101,17 +101,60 @@ export function PrimaryButton({
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.97 }}
       className={cn(
-        'group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground ring-glow-energy transition-shadow',
+        'group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground ring-glow-energy transition-[filter,box-shadow] hover:brightness-105',
         className,
       )}
       {...(props as React.ComponentProps<typeof motion.button>)}
     >
       <span
         aria-hidden
-        className="absolute inset-y-0 -left-1/2 w-1/3 skew-x-[-20deg] bg-white/30 opacity-0 transition-opacity group-hover:opacity-100"
-        style={{ animation: 'sweep 1.2s ease-in-out infinite' }}
+        className="pointer-events-none absolute inset-y-0 left-0 w-2/5 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:animate-btn-shine"
       />
       <span className="relative flex items-center gap-2">{children}</span>
+    </motion.button>
+  )
+}
+
+export function AccentButton({
+  children,
+  className,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
+      className={cn(
+        'group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground ring-glow-gold transition-[filter,box-shadow] hover:brightness-105',
+        className,
+      )}
+      {...(props as React.ComponentProps<typeof motion.button>)}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 w-2/5 bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-0 group-hover:animate-btn-shine"
+      />
+      <span className="relative flex items-center gap-2">{children}</span>
+    </motion.button>
+  )
+}
+
+export function SecondaryButton({
+  children,
+  className,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
+      className={cn(
+        'inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80',
+        className,
+      )}
+      {...(props as React.ComponentProps<typeof motion.button>)}
+    >
+      {children}
     </motion.button>
   )
 }

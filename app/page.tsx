@@ -12,9 +12,9 @@ import { PlayerProfileView } from '@/components/views/player-profile-view'
 import { ChallengesView } from '@/components/views/challenges-view'
 import { PrizesView } from '@/components/views/prizes-view'
 import { ComingSoonView } from '@/components/views/coming-soon-view'
-import { NotificationsView } from '@/components/views/notifications-view'
 import { UserProvider } from '@/components/auth/user-provider'
 import { RegionProvider } from '@/components/region-provider'
+import { SportProvider } from '@/components/sport-provider'
 
 export default function Page() {
   const [view, setView] = useState<View>('home')
@@ -32,16 +32,15 @@ export default function Page() {
 
   return (
     <RegionProvider>
+    <SportProvider>
     <UserProvider>
       <div className="relative min-h-screen">
         <Atmosphere />
 
         <ConsoleNav view={view} setView={setView} />
         <TopBar
-          onBell={() => setView('notifications')}
           onProfile={() => setView('profile')}
           isProfile={view === 'profile'}
-          isNotifications={view === 'notifications'}
         />
 
         <div className="relative lg:pl-20">
@@ -74,7 +73,6 @@ export default function Page() {
                     onBack={() => setView('ranking')}
                   />
                 )}
-                {view === 'notifications' && <NotificationsView />}
                 {view === 'soon' && <ComingSoonView />}
               </motion.div>
             </AnimatePresence>
@@ -82,6 +80,7 @@ export default function Page() {
         </div>
       </div>
     </UserProvider>
+    </SportProvider>
     </RegionProvider>
   )
 }

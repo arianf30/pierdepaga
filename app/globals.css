@@ -210,6 +210,9 @@
       );
     background-size: 44px 44px;
   }
+  .animate-btn-shine {
+    animation: btn-shine 0.65s ease-out;
+  }
 }
 
 @keyframes float-particle {
@@ -229,11 +232,19 @@
   }
 }
 
-@keyframes sweep {
+@keyframes btn-shine {
   0% {
-    transform: translateX(-100%);
+    transform: translateX(-150%) skewX(-12deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
   }
   100% {
-    transform: translateX(200%);
+    transform: translateX(250%) skewX(-12deg);
+    opacity: 0;
   }
 }

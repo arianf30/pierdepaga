@@ -40,6 +40,7 @@ export function ProfileView() {
         profile={{
           firstName: profile.firstName,
           lastName: profile.lastName,
+          displayName: profile.displayName,
           instagram: profile.instagram || undefined,
           avatar: profile.avatar || player.avatar,
           setsWon: profile.setsWon,

@@ -3,14 +3,16 @@
 import { type ReactNode } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { useRegion } from '@/components/region-provider'
+import { useSport } from '@/components/sport-provider'
 import { COUNTRIES, provincesFor, type CountryId } from '@/lib/regions'
+import { SPORTS, sportLabel, type SportId } from '@/lib/sports'
 import { cn } from '@/lib/utils'
 
 const valueClass =
   'font-display text-xs font-semibold uppercase tracking-[0.14em] text-foreground'
 
 const shellClass =
-  'group relative h-11 rounded-xl border border-border/80 bg-secondary/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-[border-color,background-color,box-shadow] hover:border-primary/35 hover:bg-secondary/70 has-[:focus-visible]:border-primary/50 has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-primary/25'
+  'group relative h-11 overflow-hidden rounded-xl border border-border/80 bg-secondary/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-[border-color,background-color,box-shadow] hover:border-primary/35 hover:bg-secondary/70 has-[:focus-visible]:border-primary/50 has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-primary/25'
 
 function SelectShell({
   label,
@@ -55,7 +57,7 @@ function SelectShell({
 
       {!flagOnly && (
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 flex w-9 items-center justify-center border-l border-border/50 bg-black/10"
+          className="pointer-events-none absolute inset-y-0 right-0 flex w-9 items-center justify-center rounded-r-xl border-l border-border/50 bg-black/10"
           aria-hidden
         >
           <ChevronDown className="size-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
@@ -67,10 +69,25 @@ function SelectShell({
 
 export function RegionSelectors({ className }: { className?: string }) {
   const { country, province, setCountry, setProvince } = useRegion()
+  const { sport, setSport } = useSport()
   const selectedCountry = COUNTRIES.find((c) => c.id === country)!
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
+      <SelectShell
+        label="Deporte"
+        className="min-w-[6.5rem]"
+        value={sport}
+        onChange={(v) => setSport(v as SportId)}
+        options={SPORTS.map((s) => ({
+          value: s.id,
+          label: s.label.toUpperCase(),
+        }))}
+      >
+        <span className={cn(valueClass, 'min-w-0 truncate')}>
+          {sportLabel(sport).toUpperCase()}
+        </span>
+      </SelectShell>
       <SelectShell
         label="País"
         flagOnly

@@ -1,3 +1,4 @@
+import { playerMatchesSearch, playerShortPublicName } from '@/lib/player-names'
 import { POSITIVE_STREAK_MILESTONES } from '@/lib/streaks'
 
 export type View =
@@ -12,7 +13,10 @@ export type View =
 
 export type Player = {
   id: string
+  /** Nombre y apellido reales. */
   name: string
+  /** Nombre visible en ranking y desafíos. */
+  displayName?: string
   handle: string
   avatar: string
   rank: number
@@ -30,6 +34,7 @@ export type Player = {
 export type PlayerProfileData = {
   firstName: string
   lastName: string
+  displayName: string
   instagram?: string
   dni: string
   avatar: string
@@ -42,6 +47,7 @@ export type PlayerProfileData = {
 export const defaultProfile: PlayerProfileData = {
   firstName: 'Marco',
   lastName: 'Vidal',
+  displayName: 'El Muro',
   instagram: '',
   dni: '30123456',
   avatar: '/player-1.png',
@@ -82,9 +88,102 @@ export const wonPrizes: WonPrize[] = [
   },
 ]
 
+export type AnnualRankingPrize = {
+  id: string
+  position: 1 | 2 | 3
+  title: string
+  sponsor: string
+  image?: string
+}
+
+export type StreakCatalogPrize = {
+  id: string
+  milestone: number
+  title: string
+  sponsor: string
+  image?: string
+  deliveredCount: number
+}
+
+/** Premios del podio regional — se entregan 1 vez al año. */
+export const annualRankingPrizes: AnnualRankingPrize[] = [
+  {
+    id: 'annual-1',
+    position: 1,
+    title: 'Kit campeón completo',
+    sponsor: 'Paddle Pro',
+    image: '/tournament-teaser.png',
+  },
+  {
+    id: 'annual-2',
+    position: 2,
+    title: 'Paleta Pro Edition',
+    sponsor: 'SportZone',
+    image: '/sponsors-teaser.png',
+  },
+  {
+    id: 'annual-3',
+    position: 3,
+    title: 'Bolso + accesorios arena',
+    sponsor: 'Arena Norte',
+    image: '/clubs-teaser.png',
+  },
+]
+
+const STREAK_PRIZE_CATALOG: Record<
+  (typeof POSITIVE_STREAK_MILESTONES)[number],
+  Omit<StreakCatalogPrize, 'id' | 'milestone'>
+> = {
+  3: {
+    title: 'Cubregrip PierdePaga',
+    sponsor: 'Paddle Pro',
+    deliveredCount: 284,
+  },
+  5: {
+    title: 'Remera edición arena',
+    sponsor: 'SportZone',
+    deliveredCount: 156,
+  },
+  8: {
+    title: 'Muñequeras premium',
+    sponsor: 'Wilson Padel',
+    deliveredCount: 89,
+  },
+  11: {
+    title: 'Pelotas x3 + funda',
+    sponsor: 'Head',
+    deliveredCount: 52,
+  },
+  14: {
+    title: 'Voucher cancha 2 hs',
+    sponsor: 'Club Padel Formosa',
+    deliveredCount: 31,
+  },
+  17: {
+    title: 'Paleta intermedia',
+    sponsor: 'Bullpadel',
+    deliveredCount: 18,
+  },
+  20: {
+    title: 'Paleta pro firmada',
+    sponsor: 'Adidas Padel',
+    image: '/tournament-teaser.png',
+    deliveredCount: 7,
+  },
+}
+
+/** Premios por hitos de racha positiva (constantes en lib/streaks). */
+export const streakCatalogPrizes: StreakCatalogPrize[] =
+  POSITIVE_STREAK_MILESTONES.map((milestone) => ({
+    id: `streak-${milestone}`,
+    milestone,
+    ...STREAK_PRIZE_CATALOG[milestone],
+  }))
+
 export const me: Player = {
   id: 'me',
   name: 'Marco Vidal',
+  displayName: 'El Muro',
   handle: '@elmuro',
   avatar: '/player-1.png',
   rank: 7,
@@ -100,7 +199,32 @@ export const me: Player = {
 
 export const topPlayers: Player[] = []
 
-export const leaderboard: Player[] = [
+const MOCK_PLAYER_DISPLAY_NAMES: Record<string, string> = {
+  p2: 'Sofi',
+  p3: 'Diego',
+  p9: 'Vale',
+  p4: 'Lu',
+  p5: 'Tomás',
+  p10: 'Nico',
+  me: 'El Muro',
+  p6: 'Elena',
+  p7: 'Hugo',
+  p8: 'Carla',
+  p11: 'Facu',
+  p12: 'Cami',
+  p13: 'Javi',
+  p14: 'Paula',
+  p15: 'Richi',
+  p16: 'Andre',
+  p17: 'Gonza',
+  p18: 'Martu',
+  p19: 'Leo',
+  p20: 'Bianca',
+  p21: 'Seba',
+  p22: 'Flor',
+}
+
+const LEADERBOARD_RAW: Player[] = [
   {
     id: 'p2',
     name: 'Sofía Reyes',
@@ -433,6 +557,11 @@ export const leaderboard: Player[] = [
   },
 ]
 
+export const leaderboard: Player[] = LEADERBOARD_RAW.map((player) => ({
+  ...player,
+  displayName: MOCK_PLAYER_DISPLAY_NAMES[player.id] ?? player.displayName,
+}))
+
 export const challengers: Player[] = leaderboard.filter((p) => p.id !== 'me')
 
 export const RANKING_PAGE_SIZE = 10
@@ -612,7 +741,7 @@ export function doublesSkillTotal(match: DoublesSides): number {
 }
 
 export function teamLabel(players: [Player, Player]): string {
-  return `${players[0].name.split(' ')[0]} & ${players[1].name.split(' ')[0]}`
+  return `${playerShortPublicName(players[0])} & ${playerShortPublicName(players[1])}`
 }
 
 const HIGH_STAKES_SKILL = 9000
@@ -790,6 +919,7 @@ export type PublicPlayerProfile = {
   profile: {
     firstName: string
     lastName: string
+    displayName?: string
     instagram?: string
     avatar: string
     setsWon: number
@@ -885,6 +1015,89 @@ function buildMockPrizes(player: Player): WonPrize[] {
   return prizes
 }
 
+export type Club = {
+  id: string
+  name: string
+  city?: string
+}
+
+export const clubs: Club[] = [
+  { id: 'c1', name: 'Club Padel Formosa', city: 'Formosa' },
+  { id: 'c2', name: 'Arena Norte', city: 'Resistencia' },
+  { id: 'c3', name: 'Padel Center Resistencia', city: 'Resistencia' },
+  { id: 'c4', name: 'Top Padel CABA', city: 'CABA' },
+  { id: 'c5', name: 'Green Padel Club', city: 'La Plata' },
+  { id: 'c6', name: 'Arena Padel Rosario', city: 'Rosario' },
+  { id: 'c7', name: 'Córdoba Padel Arena', city: 'Córdoba' },
+  { id: 'c8', name: 'Sunset Padel Bar', city: 'CABA' },
+  { id: 'c9', name: 'Club Deportivo Chaco', city: 'Resistencia' },
+  { id: 'c10', name: 'Padel Point Norte', city: 'Formosa' },
+]
+
+export const CLUB_SEARCH_LIMIT = 8
+
+export function searchClubs(
+  query: string,
+  options?: { limit?: number },
+): Club[] {
+  const limit = options?.limit ?? CLUB_SEARCH_LIMIT
+  const normalized = query.trim().toLowerCase()
+  if (!normalized) return []
+
+  return clubs
+    .filter(
+      (club) =>
+        club.name.toLowerCase().includes(normalized) ||
+        club.city?.toLowerCase().includes(normalized),
+    )
+    .slice(0, limit)
+}
+
+export const CHALLENGE_SKILL_RANGE = 200
+
+export function searchChallengeOpponents(
+  query: string,
+  teamAverage: number,
+  options?: { excludeIds?: string[]; limit?: number },
+): Player[] {
+  const limit = options?.limit ?? PLAYER_SEARCH_LIMIT
+  const exclude = new Set(options?.excludeIds ?? [])
+  const normalized = query.trim().toLowerCase()
+  if (!normalized) return []
+
+  const minRating = teamAverage - CHALLENGE_SKILL_RANGE
+  const maxRating = teamAverage + CHALLENGE_SKILL_RANGE
+
+  return leaderboard
+    .filter(
+      (player) =>
+        !exclude.has(player.id) &&
+        player.rating >= minRating &&
+        player.rating <= maxRating,
+    )
+    .filter((player) => playerMatchesSearch(player, normalized))
+    .slice(0, limit)
+}
+
+export const PLAYER_SEARCH_LIMIT = 10
+
+export function searchPlayers(
+  query: string,
+  options?: { excludeIds?: string[]; limit?: number },
+): Player[] {
+  const limit = options?.limit ?? PLAYER_SEARCH_LIMIT
+  const exclude = new Set(options?.excludeIds ?? [])
+  const normalized = query.trim().toLowerCase()
+
+  const pool = leaderboard.filter((p) => !exclude.has(p.id))
+
+  const filtered = normalized
+    ? pool.filter((p) => playerMatchesSearch(p, normalized))
+    : pool
+
+  return filtered.slice(0, limit)
+}
+
 export function getPlayerById(playerId: string): Player | undefined {
   if (playerId === 'me') return me
   return leaderboard.find((p) => p.id === playerId)
@@ -903,6 +1116,7 @@ export function getPublicPlayerProfile(
       profile: {
         firstName: defaultProfile.firstName || firstName,
         lastName: defaultProfile.lastName || lastName,
+        displayName: defaultProfile.displayName || player.displayName,
         instagram: defaultProfile.instagram || undefined,
         avatar: defaultProfile.avatar || player.avatar,
         setsWon: defaultProfile.setsWon,
@@ -924,6 +1138,7 @@ export function getPublicPlayerProfile(
     profile: {
       firstName,
       lastName,
+      displayName: player.displayName,
       instagram: MOCK_INSTAGRAM[player.id],
       avatar: player.avatar,
       ...stats,

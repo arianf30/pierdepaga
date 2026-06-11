@@ -13,6 +13,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { leaderboard, RANKING_PAGE_SIZE, type Player, type View } from '@/lib/data'
+import { playerMatchesSearch, playerPublicName } from '@/lib/player-names'
 import { fadeUp } from '@/components/ui-kit'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/components/auth/user-provider'
@@ -227,7 +228,7 @@ function PlayerIdentity({
               isMe && 'text-primary',
             )}
           >
-            {player.name}
+            {playerPublicName(player)}
           </span>
           <StreakBadge streak={player.streak} />
           {isMe && (
@@ -364,11 +365,7 @@ export function RankingView({
   const sorted = useMemo(() => {
     const normalized = query.trim().toLowerCase()
     const filtered = normalized
-      ? leaderboard.filter(
-          (p) =>
-            p.name.toLowerCase().includes(normalized) ||
-            p.handle.toLowerCase().includes(normalized),
-        )
+      ? leaderboard.filter((p) => playerMatchesSearch(p, normalized))
       : leaderboard
 
     return sortPlayers(filtered, sort.column, sort.direction)
@@ -477,7 +474,7 @@ export function RankingView({
                   const isMe =
                     p.id === 'me' ||
                     p.handle === player.handle ||
-                    p.name === player.name
+                    p.id === player.id
                   return (
                     <RankingRow
                       key={p.id}

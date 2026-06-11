@@ -77,11 +77,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const player = useMemo<Player>(() => {
     const fullName = `${profile.firstName} ${profile.lastName}`.trim()
+    const publicName = profile.displayName.trim() || fullName
 
     if (!user) {
       return {
         ...baseMe,
         name: fullName || baseMe.name,
+        displayName: publicName || baseMe.displayName,
         avatar: profile.avatar || baseMe.avatar,
       }
     }
@@ -89,19 +91,26 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return {
       ...baseMe,
       name: fullName || getDisplayName(user),
+      displayName: publicName,
       handle: getHandle(user),
       avatar: profile.avatar || getAvatarUrl(user) || baseMe.avatar,
     }
   }, [user, profile])
 
   function updateProfile(next: PlayerProfileData): string | null {
+    if (!next.displayName.trim()) {
+      return 'El nombre para mostrar es obligatorio.'
+    }
     if (!next.dni.trim()) return 'El DNI es obligatorio.'
     if (!/^\d{7,8}$/.test(next.dni)) return 'El DNI debe tener 7 u 8 dígitos.'
     if (takenDnis.has(next.dni) && next.dni !== profile.dni) {
       return 'Ese DNI ya está registrado por otro jugador.'
     }
 
-    setProfile(next)
+    setProfile({
+      ...next,
+      displayName: next.displayName.trim(),
+    })
     return null
   }
 
