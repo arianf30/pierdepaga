@@ -1,55 +1,47 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import {
-  mapPendingMatchBundle,
-  type PendingMatchBundle,
-} from '@/lib/ranking/map-pending-match'
-import type { PendingSimpleMatch } from '@/lib/pending-activities'
+import type { PendingPartido } from '@/lib/supabase/partidos'
 import { useRegion } from '@/components/region-provider'
+import { useSport } from '@/components/sport-provider'
 
-export function usePendingMatches() {
-  const { province } = useRegion()
-  const [matches, setMatches] = useState<PendingSimpleMatch[]>([])
+export function usePendingPartidos() {
+  const { country, province } = useRegion()
+  const { sport } = useSport()
+  const [partidos, setPartidos] = useState<PendingPartido[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-
     try {
-      const response = await fetch('/api/matches', {
+      const params = new URLSearchParams({ country, province, sport })
+      const response = await fetch(`/api/partidos?${params}`, {
         credentials: 'include',
         cache: 'no-store',
       })
       const body = (await response.json()) as {
-        pending?: PendingMatchBundle[]
+        partidos?: PendingPartido[]
         error?: string
       }
-
       if (!response.ok) {
         throw new Error(body.error ?? 'No se pudieron cargar los partidos')
       }
-
-      const mapped = (body.pending ?? [])
-        .map((bundle, index) => mapPendingMatchBundle(bundle, province, index + 1))
-        .filter((item): item is PendingSimpleMatch => item !== null)
-
-      setMatches(mapped)
+      setPartidos(body.partidos ?? [])
     } catch (err) {
-      setMatches([])
+      setPartidos([])
       setError(
         err instanceof Error ? err.message : 'No se pudieron cargar los partidos',
       )
     } finally {
       setLoading(false)
     }
-  }, [province])
+  }, [country, province, sport])
 
   useEffect(() => {
     void load()
   }, [load])
 
-  return { matches, loading, error, refresh: load }
+  return { partidos, loading, error, refresh: load }
 }

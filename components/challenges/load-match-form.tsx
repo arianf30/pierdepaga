@@ -1,19 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CheckCircle2, CirclePlus, Loader2 } from 'lucide-react'
 import type { Player } from '@/lib/data'
 import { GhostButton, PrimaryButton } from '@/components/ui-kit'
 import { useUser } from '@/components/auth/user-provider'
-import { SkillStakesPanel } from '@/components/challenges/skill-stakes-panel'
-import { MatchOutcomePanel } from '@/components/challenges/match-outcome-panel'
-import { useRanking } from '@/hooks/use-ranking'
-import {
-  computeMatchSkillStakes,
-  playerSkillOrDefault,
-  resolveStakesForWinner,
-  type MatchSkillStakes,
-} from '@/lib/ranking/match-stakes'
 import { MatchDateTimeField } from '@/components/challenges/match-datetime-field'
 import {
   ClubSearchField,
@@ -40,6 +31,8 @@ import {
   type SetScoreInput,
 } from '@/lib/padel-score'
 
+type WinnerTeam = 'A' | 'B'
+
 const emptySet = (): SetScoreInput => ({ teamA: '', teamB: '' })
 
 function SetCell({
@@ -58,8 +51,7 @@ function SetCell({
   inputId: string
 }) {
   const parsed = parseSetScore(value)
-  const valid =
-    parsed !== null && isValidPadelSet(parsed.teamA, parsed.teamB)
+  const valid = parsed !== null && isValidPadelSet(parsed.teamA, parsed.teamB)
   const hasInput = value.teamA !== '' || value.teamB !== ''
   const showError = showValidation && hasInput && !valid && !disabled
   const showOk = showValidation && valid && !disabled
@@ -104,7 +96,6 @@ export function LoadMatchForm({
   onCancel?: () => void
 }) {
   const { player } = useUser()
-  const { myRanking } = useRanking()
   const { country, province } = useRegion()
   const { sport } = useSport()
   const [teamAPartner, setTeamAPartner] = useState<Player | null>(null)
@@ -115,87 +106,13 @@ export function LoadMatchForm({
   const [set1, setSet1] = useState<SetScoreInput>(emptySet())
   const [set2, setSet2] = useState<SetScoreInput>(emptySet())
   const [set3, setSet3] = useState<SetScoreInput>(emptySet())
+  const [winner, setWinner] = useState<WinnerTeam | null>(null)
   const [matchDateTime, setMatchDateTime] = useState(getDefaultMatchDateTime)
   const [club, setClub] = useState<ClubSelection | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [success, setSuccess] = useState(false)
   const [saving, setSaving] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [liveStakes, setLiveStakes] = useState<MatchSkillStakes | null>(null)
-  const [stakesLoading, setStakesLoading] = useState(false)
-
-  const mySkill = playerSkillOrDefault(myRanking?.skill_rating)
-
-  const localStakes = useMemo(() => {
-    if (!teamAPartner || !teamB.player1 || !teamB.player2) return null
-
-    return computeMatchSkillStakes(
-      [mySkill, playerSkillOrDefault(teamAPartner.rating)],
-      [
-        playerSkillOrDefault(teamB.player1.rating),
-        playerSkillOrDefault(teamB.player2.rating),
-      ],
-    )
-  }, [teamAPartner, teamB, mySkill])
-
-  const skillStakes = liveStakes ?? localStakes
-  const previewProvince = club?.province ?? province
-  const showSkillStakes = Boolean(skillStakes)
-
-  useEffect(() => {
-    if (!teamAPartner || !teamB.player1 || !teamB.player2) {
-      setLiveStakes(null)
-      setStakesLoading(false)
-      return
-    }
-
-    const controller = new AbortController()
-    const timeout = window.setTimeout(async () => {
-      setStakesLoading(true)
-      try {
-        const params = new URLSearchParams({
-          country,
-          province: previewProvince,
-          sport,
-        })
-        params.append('team_a', player.id)
-        params.append('team_a', teamAPartner.id)
-        params.append('team_b', teamB.player1.id)
-        params.append('team_b', teamB.player2.id)
-
-        const response = await fetch(`/api/matches/skill-preview?${params}`, {
-          credentials: 'include',
-          cache: 'no-store',
-          signal: controller.signal,
-        })
-        const body = (await response.json()) as {
-          stakes?: MatchSkillStakes
-        }
-        if (response.ok && body.stakes) {
-          setLiveStakes(body.stakes)
-        } else if (!controller.signal.aborted) {
-          setLiveStakes(null)
-        }
-      } catch {
-        if (!controller.signal.aborted) setLiveStakes(null)
-      } finally {
-        if (!controller.signal.aborted) setStakesLoading(false)
-      }
-    }, 200)
-
-    return () => {
-      controller.abort()
-      window.clearTimeout(timeout)
-    }
-  }, [
-    country,
-    previewProvince,
-    sport,
-    player.id,
-    teamAPartner,
-    teamB.player1,
-    teamB.player2,
-  ])
 
   const dateTimeError = useMemo(
     () => validateMatchDateTime(matchDateTime),
@@ -219,33 +136,25 @@ export function LoadMatchForm({
     return validateMatchScore(s1, s2, s3)
   }, [set1, set2, set3, requiresThirdSet])
 
-  const confirmedOutcome = useMemo(() => {
-    if (!skillStakes || !scoreValidation.matchWinner) return null
-
-    const loserSkills =
-      scoreValidation.matchWinner === 'A'
-        ? skillStakes.teamBSkills
-        : skillStakes.teamASkills
-
-    return resolveStakesForWinner(skillStakes, scoreValidation.matchWinner, {
-      loserPlayerSkills: loserSkills,
-    })
-  }, [skillStakes, scoreValidation.matchWinner])
-
   const playerErrors: string[] = []
   if (submitted) {
     if (!teamAPartner) playerErrors.push('Falta tu compañero del equipo A.')
     if (!teamB.player1) playerErrors.push('Falta el jugador 1 del equipo B.')
     if (!teamB.player2) playerErrors.push('Falta el jugador 2 del equipo B.')
+    if (!winner) playerErrors.push('Seleccioná el equipo ganador.')
     if (dateTimeError) playerErrors.push(dateTimeError)
     if (!club) playerErrors.push('Elegí o ingresá un club.')
   }
 
-  const allErrors = [...playerErrors, ...(submitted ? scoreValidation.errors : [])]
+  const allErrors = [
+    ...playerErrors,
+    ...(submitted ? scoreValidation.errors : []),
+  ]
   const canSubmit =
     teamAPartner &&
     teamB.player1 &&
     teamB.player2 &&
+    winner &&
     !dateTimeError &&
     club &&
     scoreValidation.valid
@@ -256,27 +165,27 @@ export function LoadMatchForm({
     setSuccess(false)
     setSubmitError(null)
 
-    if (!canSubmit || !club || !scoreValidation.matchWinner) return
+    if (!canSubmit || !club || !winner) return
 
     setSaving(true)
 
     try {
-      const response = await fetch('/api/matches', {
+      const response = await fetch('/api/partidos', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          match_type: 'simple',
-          club_id: club.isCustom ? null : club.id,
-          club_name: club.name,
-          club_country_id: club.country_id,
-          club_province: club.province,
-          sport_id: sport,
-          played_at: buildMatchDate(matchDateTime).toISOString(),
-          score: scoreValidation.formattedScore,
-          winner_team: scoreValidation.matchWinner,
-          team_a: [player.id, teamAPartner!.id],
-          team_b: [teamB.player1!.id, teamB.player2!.id],
+          // Scope del ranking = región activa (el club es solo el lugar).
+          country,
+          province,
+          sport,
+          j2a_id: teamAPartner!.id,
+          j1b_id: teamB.player1!.id,
+          j2b_id: teamB.player2!.id,
+          ganador: winner,
+          resultado: scoreValidation.formattedScore,
+          club: club.name,
+          fecha: buildMatchDate(matchDateTime).toISOString(),
         }),
       })
 
@@ -293,6 +202,7 @@ export function LoadMatchForm({
       setSet1(emptySet())
       setSet2(emptySet())
       setSet3(emptySet())
+      setWinner(null)
       setMatchDateTime(getDefaultMatchDateTime())
       setClub(null)
 
@@ -369,14 +279,28 @@ export function LoadMatchForm({
         </div>
       </div>
 
-      {showSkillStakes && !confirmedOutcome && (
-        <SkillStakesPanel
-          stakes={skillStakes}
-          loading={stakesLoading && !liveStakes}
-        />
-      )}
-
-      {confirmedOutcome && <MatchOutcomePanel outcome={confirmedOutcome} />}
+      <div>
+        <p className="type-label mb-2 text-[11px]">¿Qué equipo ganó?</p>
+        <div className="grid grid-cols-2 gap-2">
+          {(['A', 'B'] as const).map((team) => (
+            <button
+              key={team}
+              type="button"
+              onClick={() => setWinner(team)}
+              className={cn(
+                'rounded-xl border px-4 py-3 text-sm font-semibold transition-colors',
+                winner === team
+                  ? team === 'A'
+                    ? 'border-primary/50 bg-primary/15 text-primary'
+                    : 'border-accent/50 bg-accent/15 text-accent'
+                  : 'border-border bg-secondary/40 text-muted-foreground hover:border-primary/30 hover:text-foreground',
+              )}
+            >
+              Gana equipo {team}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="space-y-4 rounded-2xl border border-border bg-card/40 p-3">
         <MatchDateTimeField
@@ -432,17 +356,21 @@ export function LoadMatchForm({
         </p>
       </div>
 
-      {scoreValidation.valid && scoreValidation.matchWinner && (
+      {scoreValidation.valid && (
         <div className="space-y-2">
           <div className="rounded-xl border border-primary/25 bg-primary/10 px-3 py-2.5 text-sm">
             <span className="text-muted-foreground">Marcador: </span>
             <span className="font-display font-bold tabular-nums">
               {scoreValidation.formattedScore}
             </span>
-            <span className="text-muted-foreground"> · Gana </span>
-            <span className="font-semibold text-primary">
-              Equipo {scoreValidation.matchWinner}
-            </span>
+            {winner && (
+              <>
+                <span className="text-muted-foreground"> · Gana </span>
+                <span className="font-semibold text-primary">
+                  Equipo {winner}
+                </span>
+              </>
+            )}
           </div>
           {!dateTimeError && club && (
             <div className="rounded-xl border border-border bg-secondary/30 px-3 py-2.5 text-xs text-muted-foreground">

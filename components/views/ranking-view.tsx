@@ -13,15 +13,17 @@ import {
   Search,
   Swords,
   TrendingUp,
+  UserPlus,
 } from 'lucide-react'
-import { leaderboard, RANKING_PAGE_SIZE, type Player } from '@/lib/data'
+import { RANKING_PAGE_SIZE, type Player } from '@/lib/data'
 import { playerProfilePath, routes } from '@/lib/routes'
 import { playerMatchesSearch, playerPublicName } from '@/lib/player-names'
-import { fadeUp } from '@/components/ui-kit'
+import { fadeUp, PrimaryButton } from '@/components/ui-kit'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/components/auth/user-provider'
 import { useRegion } from '@/components/region-provider'
-import { useRanking } from '@/hooks/use-ranking'
+import { useScopeRanking } from '@/hooks/use-scope-ranking'
+import { EnrollRankingModal } from '@/components/ranking/enroll-ranking-modal'
 import { formatSkill, playerSkill, SKILL_LABEL } from '@/lib/skill'
 import { formatStreakValue } from '@/lib/streaks'
 import { StreakBadge } from '@/components/arena/streak-badge'
@@ -338,13 +340,18 @@ export function RankingView() {
   const router = useRouter()
   const { player } = useUser()
   const { rankingTitle } = useRegion()
-  const { leaderboard, loading, error } = useRanking()
+  const { players: leaderboard, myRow, loading, error, enroll } =
+    useScopeRanking()
   const [page, setPage] = useState(0)
   const [query, setQuery] = useState('')
+  const [enrollOpen, setEnrollOpen] = useState(false)
   const [sort, setSort] = useState<SortState>({
     column: 'rank',
     direction: 'asc',
   })
+
+  const isGuest = !player.id || player.id === 'guest'
+  const canEnroll = !isGuest && !loading && !myRow
 
   function handleViewPlayer(playerId: string) {
     router.push(playerProfilePath(playerId))
@@ -373,7 +380,7 @@ export function RankingView() {
       : leaderboard
 
     return sortPlayers(filtered, sort.column, sort.direction)
-  }, [query, sort])
+  }, [query, sort, leaderboard])
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / RANKING_PAGE_SIZE))
   const safePage = Math.min(page, totalPages - 1)
@@ -384,6 +391,29 @@ export function RankingView() {
 
   return (
     <div className="space-y-8 pb-10">
+      {canEnroll && (
+        <motion.div
+          {...fadeUp(0)}
+          className="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-primary/6 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <p className="font-display text-sm font-semibold text-foreground">
+              Todavía no estás en el {rankingTitle}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Inscribite gratis y empezá a competir por premios.
+            </p>
+          </div>
+          <PrimaryButton
+            type="button"
+            onClick={() => setEnrollOpen(true)}
+            className="shrink-0"
+          >
+            <UserPlus className="size-4" /> Inscribirse gratis
+          </PrimaryButton>
+        </motion.div>
+      )}
+
       <motion.div {...fadeUp(0)}>
         <h1 className="text-3xl font-semibold tracking-tight lg:text-4xl">
           {rankingTitle}
@@ -568,6 +598,15 @@ export function RankingView() {
           </>
         )}
       </motion.section>
+
+      <EnrollRankingModal
+        open={enrollOpen}
+        rankingTitle={rankingTitle}
+        onClose={() => setEnrollOpen(false)}
+        onConfirm={async () => {
+          await enroll()
+        }}
+      />
     </div>
   )
 }

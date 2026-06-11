@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { searchRankingPlayers } from '@/lib/supabase/ranking'
+import { fetchRecentPartidos } from '@/lib/supabase/partidos'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -19,22 +19,13 @@ export async function GET(request: Request) {
     province: searchParams.get('province') ?? 'Formosa',
     sport: searchParams.get('sport') ?? 'padel',
   }
-  const query = searchParams.get('q') ?? ''
-  const exclude = searchParams.getAll('exclude')
 
   try {
-    const players = await searchRankingPlayers(
-      supabase,
-      scope,
-      query,
-      exclude,
-      20,
-    )
-
-    return NextResponse.json({ players })
+    const recientes = await fetchRecentPartidos(supabase, scope, 6)
+    return NextResponse.json({ recientes })
   } catch (err) {
     const message =
-      err instanceof Error ? err.message : 'No se pudieron buscar jugadores'
+      err instanceof Error ? err.message : 'No se pudieron cargar los partidos'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

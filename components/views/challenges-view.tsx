@@ -15,9 +15,8 @@ import { LoadMatchModal } from '@/components/challenges/load-match-modal'
 import { SkillPointsCalculatorModal } from '@/components/challenges/skill-points-calculator-modal'
 import { PierdePagaChallengeModal } from '@/components/challenges/pierde-paga-challenge-modal'
 import { PendingPierdePagaCard } from '@/components/challenges/pending-pierde-paga-card'
-import { PendingSimpleMatchCard } from '@/components/challenges/pending-simple-match-card'
-import { usePendingMatches } from '@/hooks/use-pending-matches'
-import { useRanking } from '@/hooks/use-ranking'
+import { PendingPartidoCard } from '@/components/challenges/pending-partido-card'
+import { usePendingPartidos } from '@/hooks/use-pending-partidos'
 import { getPlayerById, searchChallengeOpponents } from '@/lib/data'
 import {
   pendingPierdePagaChallenges,
@@ -27,61 +26,32 @@ import {
 
 export function ChallengesView() {
   const { player } = useUser()
-  const { matches: simpleMatches, loading, refresh } = usePendingMatches()
-  const { refresh: refreshRanking } = useRanking()
+  const {
+    partidos: pendingPartidos,
+    loading: partidosLoading,
+    refresh: refreshPartidos,
+  } = usePendingPartidos()
   const [loadMatchOpen, setLoadMatchOpen] = useState(false)
   const [calculatorOpen, setCalculatorOpen] = useState(false)
   const [pierdePagaOpen, setPierdePagaOpen] = useState(false)
-  const [actionError, setActionError] = useState<string | null>(null)
   const [challenges, setChallenges] = useState(pendingPierdePagaChallenges)
 
-  const sortedSimpleMatches = useMemo(
-    () => [...simpleMatches].sort((a, b) => a.sortOrder - b.sortOrder),
-    [simpleMatches],
-  )
+  async function handleConfirmPartido(id: string) {
+    const response = await fetch(`/api/partidos/${id}/confirm`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+    const body = (await response.json()) as { error?: string }
+    if (!response.ok) {
+      throw new Error(body.error ?? 'No se pudo confirmar el partido')
+    }
+    await refreshPartidos()
+  }
 
   const sortedChallenges = useMemo(
     () => [...challenges].sort((a, b) => a.sortOrder - b.sortOrder),
     [challenges],
   )
-
-  async function handleConfirmSimpleMatch(id: string) {
-    setActionError(null)
-    try {
-      const response = await fetch(`/api/matches/${id}/confirm`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-      const body = (await response.json()) as { error?: string }
-      if (!response.ok) {
-        throw new Error(body.error ?? 'No se pudo confirmar el partido')
-      }
-      await Promise.all([refresh(), refreshRanking()])
-    } catch (err) {
-      setActionError(
-        err instanceof Error ? err.message : 'No se pudo confirmar el partido',
-      )
-    }
-  }
-
-  async function handleCancelSimpleMatch(id: string) {
-    setActionError(null)
-    try {
-      const response = await fetch(`/api/matches/${id}/cancel`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-      const body = (await response.json()) as { error?: string }
-      if (!response.ok) {
-        throw new Error(body.error ?? 'No se pudo cancelar el partido')
-      }
-      await refresh()
-    } catch (err) {
-      setActionError(
-        err instanceof Error ? err.message : 'No se pudo cancelar el partido',
-      )
-    }
-  }
 
   function handleConfirmChallengePartner(id: string) {
     setChallenges((prev) =>
@@ -131,7 +101,7 @@ export function ChallengesView() {
 
   function handleLoadMatchSuccess() {
     setLoadMatchOpen(false)
-    void Promise.all([refresh(), refreshRanking()])
+    void refreshPartidos()
   }
 
   return (
@@ -162,29 +132,21 @@ export function ChallengesView() {
         </motion.div>
       </motion.div>
 
-      {actionError && (
-        <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {actionError}
-        </p>
-      )}
-
       <motion.section {...fadeUp(2)}>
         <SectionTitle kicker="Pendientes" title="Partidos por confirmar" />
-        {loading ? (
+        {partidosLoading ? (
           <p className="text-sm text-muted-foreground">Cargando partidos…</p>
-        ) : sortedSimpleMatches.length === 0 ? (
+        ) : pendingPartidos.length === 0 ? (
           <p className="rounded-2xl border border-border bg-card/40 px-5 py-8 text-sm text-muted-foreground">
             No tenés partidos pendientes de confirmación.
           </p>
         ) : (
           <div className="space-y-4">
-            {sortedSimpleMatches.map((match, i) => (
-              <motion.div key={match.id} {...fadeUp(i + 3)}>
-                <PendingSimpleMatchCard
-                  match={match}
-                  userId={player.id}
-                  onConfirm={handleConfirmSimpleMatch}
-                  onCancel={handleCancelSimpleMatch}
+            {pendingPartidos.map((partido, i) => (
+              <motion.div key={partido.id} {...fadeUp(i + 3)}>
+                <PendingPartidoCard
+                  partido={partido}
+                  onConfirm={handleConfirmPartido}
                 />
               </motion.div>
             ))}

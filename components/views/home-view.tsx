@@ -4,12 +4,10 @@ import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CirclePlus, Swords, Trophy } from 'lucide-react'
-import {
-  buildArenaFeed,
-  isHighStakesMatch,
-  playedDoublesMatches,
-  scheduledMatches,
-} from '@/lib/data'
+import type { Player } from '@/lib/data'
+import { scheduledMatches } from '@/lib/data'
+import type { PlayerLite } from '@/lib/supabase/partidos'
+import { useRecentPartidos } from '@/hooks/use-recent-partidos'
 import { routes } from '@/lib/routes'
 import {
   SectionTitle,
@@ -40,10 +38,35 @@ export function HomeView() {
   const winRate =
     totalMatches > 0 ? Math.round((player.wins / totalMatches) * 100) : 0
 
-  const recentFeed = useMemo(
-    () => buildArenaFeed(playedDoublesMatches).slice(0, 6),
-    [],
-  )
+  const { recientes, loading: recientesLoading } = useRecentPartidos()
+
+  const recentFeed = useMemo(() => {
+    const toPlayer = (p: PlayerLite): Player => ({
+      id: p.id,
+      name: p.name,
+      displayName: p.name,
+      handle: '',
+      avatar: p.avatar || '/placeholder-user.jpg',
+      rank: 0,
+      rankDelta: 0,
+      tier: '—',
+      wins: 0,
+      losses: 0,
+      streak: 0,
+      rating: 0,
+      region: '',
+      status: 'online',
+    })
+
+    return recientes.map((m) => ({
+      id: m.id,
+      teamA: [toPlayer(m.teamA[0]), toPlayer(m.teamA[1])] as [Player, Player],
+      teamB: [toPlayer(m.teamB[0]), toPlayer(m.teamB[1])] as [Player, Player],
+      winnerTeam: m.winnerTeam ?? undefined,
+      score: m.score,
+      time: m.date,
+    }))
+  }, [recientes])
 
   return (
     <div className="space-y-8 pb-10">
@@ -151,22 +174,28 @@ export function HomeView() {
 
       <motion.section {...fadeUp(2)}>
         <SectionTitle title="Recientes" />
-        <div className="space-y-3">
-          {recentFeed.map((m, i) => (
-            <motion.div key={m.id} {...fadeUp(i + 1)}>
-              <DoublesFaceoff
-                teamA={m.teamA}
-                teamB={m.teamB}
-                winnerTeam={m.winnerTeam}
-                score={m.score}
-                time={m.time}
-                type={m.type}
-                stake={m.stake}
-                highlight={isHighStakesMatch(m)}
-              />
-            </motion.div>
-          ))}
-        </div>
+        {recientesLoading ? (
+          <p className="text-sm text-muted-foreground">Cargando partidos…</p>
+        ) : recentFeed.length === 0 ? (
+          <p className="rounded-2xl border border-border bg-card/40 px-5 py-8 text-sm text-muted-foreground">
+            Todavía no hay partidos jugados en este ranking.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {recentFeed.map((m, i) => (
+              <motion.div key={m.id} {...fadeUp(i + 1)}>
+                <DoublesFaceoff
+                  teamA={m.teamA}
+                  teamB={m.teamB}
+                  winnerTeam={m.winnerTeam}
+                  score={m.score}
+                  time={m.time}
+                  type="Partido simple"
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
       </motion.section>
 
       <LoadMatchModal

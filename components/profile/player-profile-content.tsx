@@ -7,6 +7,7 @@ import {
   AtSign,
   Flame,
   Gift,
+  Medal,
   Pencil,
   Target,
   Trophy,
@@ -16,71 +17,132 @@ import {
 import {
   deriveProfileStats,
   PROFILE_MATCH_PREVIEW,
-  type MatchRecord,
   type Player,
   type PublicPlayerProfile,
   type WonPrize,
 } from '@/lib/data'
+import type { MatchHistoryEntry, PlayerLite } from '@/lib/supabase/partidos'
 import { PerformanceDonut } from '@/components/profile/performance-donut'
 import { SectionTitle, fadeUp, GhostButton } from '@/components/ui-kit'
 import { cn } from '@/lib/utils'
 import { playerPublicName } from '@/lib/player-names'
 import { formatSkill, playerSkill, SKILL_LABEL } from '@/lib/skill'
 
+function TeamLine({
+  label,
+  players,
+  highlight,
+}: {
+  label: string
+  players: PlayerLite[]
+  highlight?: boolean
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="type-label mb-1 text-[9px]">{label}</p>
+      <div className="space-y-1">
+        {players.map((p, i) => (
+          <div key={p.id || i} className="flex items-center gap-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={p.avatar || '/placeholder-user.jpg'}
+              alt=""
+              className="size-6 shrink-0 rounded-md object-cover ring-1 ring-border"
+            />
+            <span
+              className={cn(
+                'min-w-0 flex-1 truncate text-xs',
+                highlight && i === 0
+                  ? 'font-semibold text-foreground'
+                  : 'text-muted-foreground',
+              )}
+            >
+              {p.name}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function MatchRow({
   match,
   index,
 }: {
-  match: MatchRecord
+  match: MatchHistoryEntry
   index: number
 }) {
   return (
     <motion.div
       {...fadeUp(index)}
-      className="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-0"
+      className="border-b border-border px-4 py-3.5 last:border-0"
     >
-      <span
-        className={cn(
-          'grid size-9 shrink-0 place-items-center rounded-lg font-display text-sm font-black',
-          match.result === 'G'
-            ? 'bg-primary/15 text-primary'
-            : 'bg-destructive/15 text-destructive',
-        )}
-      >
-        {match.result}
-      </span>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={match.avatar || '/placeholder.svg'}
-        alt={match.opponent}
-        className="size-9 rounded-lg object-cover ring-1 ring-border"
-      />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{match.opponent}</p>
-        <p className="text-xs text-muted-foreground">{match.type}</p>
-      </div>
-      <div className="text-right">
-        <p className="font-display text-sm font-bold tabular-nums">
+      <div className="mb-2.5 flex items-center gap-3">
+        <span
+          className={cn(
+            'grid size-8 shrink-0 place-items-center rounded-lg font-display text-sm font-black',
+            match.result === 'G'
+              ? 'bg-primary/15 text-primary'
+              : 'bg-destructive/15 text-destructive',
+          )}
+        >
+          {match.result}
+        </span>
+        <p className="flex-1 font-display text-sm font-bold tabular-nums">
           {match.score}
         </p>
         <p className="text-[11px] text-muted-foreground">{match.date}</p>
+      </div>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 pl-11">
+        <TeamLine label="Tu equipo" players={match.team} highlight />
+        <span className="self-center type-label text-[9px] text-muted-foreground">
+          vs
+        </span>
+        <TeamLine label="Rivales" players={match.rivals} />
       </div>
     </motion.div>
   )
 }
 
+type ProfilePerformance = {
+  setsWon: number
+  setsLost: number
+  gamesWon: number
+  gamesLost: number
+}
+
+type ProfileBestRecords = {
+  posicion: number | null
+  posicionFecha: string | null
+  habilidad: number | null
+  habilidadFecha: string | null
+  racha: number | null
+  rachaFecha: string | null
+}
+
 type PlayerProfileContentProps = {
   player: Player
   profile: PublicPlayerProfile['profile']
-  matchHistory: MatchRecord[]
+  matchHistory: MatchHistoryEntry[]
   prizes: WonPrize[]
   regionLabel: string
   rankingTitle: string
+  performance?: ProfilePerformance
+  bestRecords?: ProfileBestRecords
   readOnly?: boolean
   onEdit?: () => void
   onBack?: () => void
   editDisabled?: boolean
   editLabel?: string
+}
+
+function formatRecordDate(value: string | null): string | null {
+  if (!value) return null
+  return new Date(value).toLocaleDateString('es-AR', {
+    month: 'short',
+    year: 'numeric',
+  })
 }
 
 export function PlayerProfileContent({
@@ -90,6 +152,8 @@ export function PlayerProfileContent({
   prizes,
   regionLabel,
   rankingTitle,
+  performance,
+  bestRecords,
   readOnly = false,
   onEdit,
   onBack,
@@ -105,7 +169,43 @@ export function PlayerProfileContent({
     ? matchHistory
     : matchHistory.slice(0, PROFILE_MATCH_PREVIEW)
 
-  const performanceStats = deriveProfileStats(player)
+  const performanceStats = performance ?? deriveProfileStats(player)
+
+  const recordCards = bestRecords
+    ? [
+        {
+          key: 'pos',
+          label: 'Mejor ranking',
+          value:
+            bestRecords.posicion != null ? `#${bestRecords.posicion}` : '—',
+          date: formatRecordDate(bestRecords.posicionFecha),
+          icon: Medal,
+          tone: 'text-accent',
+        },
+        {
+          key: 'skill',
+          label: `Mejor ${SKILL_LABEL.toLowerCase()}`,
+          value:
+            bestRecords.habilidad != null
+              ? formatSkill(bestRecords.habilidad)
+              : '—',
+          date: formatRecordDate(bestRecords.habilidadFecha),
+          icon: Zap,
+          tone: 'text-primary',
+        },
+        {
+          key: 'streak',
+          label: 'Mejor racha',
+          value:
+            bestRecords.racha != null && bestRecords.racha > 0
+              ? `+${bestRecords.racha}`
+              : (bestRecords.racha ?? 0).toString(),
+          date: formatRecordDate(bestRecords.rachaFecha),
+          icon: Flame,
+          tone: 'text-orange-400',
+        },
+      ]
+    : []
 
   const legalName = `${profile.firstName} ${profile.lastName}`.trim()
   const publicName =
@@ -248,6 +348,32 @@ export function PlayerProfileContent({
             </motion.div>
           ))}
         </div>
+
+        {recordCards.length > 0 && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {recordCards.map((r, i) => (
+              <motion.div
+                key={r.key}
+                {...fadeUp(i)}
+                className="rounded-2xl border border-border bg-card/60 p-4"
+              >
+                <r.icon className={cn('size-5', r.tone)} />
+                <p
+                  className={cn(
+                    'mt-3 font-display text-2xl font-black tabular-nums',
+                    r.tone,
+                  )}
+                >
+                  {r.value}
+                </p>
+                <p className="type-label text-[11px]">{r.label}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  {r.date ?? 'Sin registro'}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         <motion.div {...fadeUp(4)}>
           <PerformanceDonut

@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
-import { matchHistory, wonPrizes } from '@/lib/data'
-import { mergePlayerWithRanking } from '@/lib/ranking/map-player'
+import type { Player } from '@/lib/data'
 import { PlayerProfileContent } from '@/components/profile/player-profile-content'
 import { ProfileEditSheet } from '@/components/profile/profile-edit-sheet'
 import { useUser } from '@/components/auth/user-provider'
 import { useRegion } from '@/components/region-provider'
-import { useRanking } from '@/hooks/use-ranking'
+import { useSport } from '@/components/sport-provider'
+import type { RankingBoardEntry } from '@/lib/types/ranking'
+import type { MatchHistoryEntry } from '@/lib/supabase/partidos'
 import { availableCountryById, isCountryId } from '@/lib/catalog'
 import { StatusBanner } from '@/components/ui/status-banner'
 
@@ -30,20 +31,74 @@ export function ProfileView() {
     loading,
   } = useUser()
   const { rankingTitle, hydrateRegion } = useRegion()
-  const { myRanking } = useRanking()
+  const { sport } = useSport()
   const [editing, setEditing] = useState(false)
   const [editKey, setEditKey] = useState(0)
   const [saveNotice, setSaveNotice] = useState<SaveNotice | null>(null)
 
+  const [ranking, setRanking] = useState<RankingBoardEntry | null>(null)
+  const [rank, setRank] = useState<number | null>(null)
+  const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])
+
   const countryName = availableCountryById(country).name
   const regionLabel = `${countryName} · ${province}`
-  const scopedPlayer = mergePlayerWithRanking(player, myRanking)
 
   const dismissNotice = useCallback(() => setSaveNotice(null), [])
 
   useEffect(() => {
     void refreshProfile()
   }, [refreshProfile])
+
+  // Datos del ranking del scope activo (stats, récords, historial).
+  useEffect(() => {
+    if (!player.id || player.id === 'guest') return
+    let active = true
+
+    async function loadScopeData() {
+      try {
+        const params = new URLSearchParams({ country, province, sport })
+        const response = await fetch(`/api/player/${player.id}?${params}`, {
+          credentials: 'include',
+          cache: 'no-store',
+        })
+        const body = (await response.json()) as {
+          ranking?: RankingBoardEntry | null
+          rank?: number | null
+          matchHistory?: MatchHistoryEntry[]
+        }
+        if (!active || !response.ok) return
+        setRanking(body.ranking ?? null)
+        setRank(body.rank ?? null)
+        setMatchHistory(body.matchHistory ?? [])
+      } catch {
+        if (active) {
+          setRanking(null)
+          setRank(null)
+          setMatchHistory([])
+        }
+      }
+    }
+
+    void loadScopeData()
+    return () => {
+      active = false
+    }
+  }, [player.id, country, province, sport])
+
+  const displayPlayer: Player = ranking
+    ? {
+        ...player,
+        rank: rank ?? 0,
+        rankDelta:
+          ranking.ultima_posicion && rank
+            ? ranking.ultima_posicion - rank
+            : 0,
+        wins: ranking.pg,
+        losses: ranking.pp,
+        streak: ranking.racha ? Number.parseInt(ranking.racha, 10) || 0 : 0,
+        rating: ranking.habilidad ?? 0,
+      }
+    : player
 
   async function handleOpenEditor() {
     if (loading) return
@@ -107,7 +162,7 @@ export function ProfileView() {
       </AnimatePresence>
 
       <PlayerProfileContent
-        player={scopedPlayer}
+        player={displayPlayer}
         profile={{
           firstName: profile.firstName,
           lastName: profile.lastName,
@@ -116,9 +171,31 @@ export function ProfileView() {
           avatar: profile.avatar || player.avatar,
         }}
         matchHistory={matchHistory}
-        prizes={wonPrizes}
+        prizes={[]}
         regionLabel={regionLabel}
         rankingTitle={rankingTitle}
+        performance={
+          ranking
+            ? {
+                setsWon: ranking.sets_ganados,
+                setsLost: ranking.sets_perdidos,
+                gamesWon: ranking.games_ganados,
+                gamesLost: ranking.games_perdidos,
+              }
+            : undefined
+        }
+        bestRecords={
+          ranking
+            ? {
+                posicion: ranking.max_posicion,
+                posicionFecha: ranking.max_posicion_fecha,
+                habilidad: ranking.max_habilidad,
+                habilidadFecha: ranking.max_habilidad_fecha,
+                racha: ranking.max_racha,
+                rachaFecha: ranking.max_racha_fecha,
+              }
+            : undefined
+        }
         onEdit={() => void handleOpenEditor()}
         editDisabled={loading}
       />
